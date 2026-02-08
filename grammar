@@ -1,0 +1,69 @@
+==================== GRAMMAR ==================== 
+
+<prog>		:= <stmt>* EOF
+<stmt>		:= <label_stmt> | <var_stmt> | <expr_stmt> | <if_stmt> | <goto_stmt> | <print_stmt>
+<label_stmt>	:= IDENTIFIER COLON
+<var_stmt>	:= VAR_KEYWORD IDENTIFIER (EQUAL <expr>)? SEMICOLON
+<expr_stmt>     := <expr> COLON
+<if_stmt>	:= IF_KEYWORD LPAREN <expr> RPAREN <stmt> (ELSE_KEYWORD <stmt>)?
+<goto_stmt>	:= GOTO_KEYWORD IDENTIFIER SEMICOLON
+<print_stmt>	:= PRINT_KEYWORD <expr> SEMICOLON
+<expr>		:= <assign>
+<assign>	:= <ternary> ( <assign>)?
+<ternary>	:= <logical_or> (QUESTION <ternary> COLON <ternary>)?
+<logical_or>	:= <logical_and> (LOGICAL_OR <logical_and>)*
+<logical_and>	:= <bitwise_or> (LOGICAL_AND <bitwise_or>)*
+<bitwise_or>	:= <bitwise_xor> (PIPE <bitwise_xor>)*
+<bitwise_xor>	:= <bitwise_and> (CARET <bitwise_and>)*
+<bitwise_and>	:= <equality> (AMPERSAND <equality>)*
+<equality>	:= <relation> ((EQUAL_EQUAL | BANG_EQUAL) <relation>)*
+<relation>	:= <shift> ((LESSER | LESSER_EQUAL | GREATER | GREATER_EQUAL) <shift>)*
+<shift>		:= <add> ((LSHIFT | RSHIFT) <add>)*
+<add>		:= <term> ((PLUS | MINUS) <term>)*
+<term>		:= <unary> ((STAR | FSLASH | MOD) <unary>)*
+<unary>		:= (BANG | TILDE | MINUS | PLUS | MINUS_MINUS | PLUS_PLUS) <unary>
+		 | <primary>
+<primary>	:= INT_LITERAL | IDENTIFIER
+
+==================== TOKEN ==================== 
+
+EOF		:= end of the file
+COLON		:= ":"
+SEMICOLON	:= ";"
+QUESTION	:= "?"
+LPAREN		:= "("
+RPAREN		:= ")"
+EQUAL		:= "="
+EQUAL_EQUAL	:= "=="
+PIPE		:= "|"
+LOGICAL_OR	:= "||"
+AMPERSAND	:= "&"
+LOGICAL_AND	:= "&&"
+CARET		:= "^"
+BANG		:= "!"
+BAND_EQUAL	:= "!="
+LESSER		:= "<"
+LESSER_EQUAL	:= "<="
+LSHIFT		:= "<<"
+GREATER		:= ">"
+GREATER_EQUAL	:= ">="
+RSHIFT		:= ">>"
+PLUS		:= "+"
+PLUS_PLUS	:= "++"
+MINUS		:= "-"
+MINUS_MINUS	:= "--"
+STAR		:= "*"
+FSLASH		:= "/"
+MOD		:= "%"
+TILDE		:= "~"
+
+IDENTIFIER	:= [a-zA-Z_][a-zA-Z0-9_]*
+
+VAR_KEYWORD	:= "var"
+IF_KEYWORD	:= "if"
+ELSE_KEYWORD	:= "else"
+GOTO_KEYWORD	:= "goto
+PRINT_KEYWORD	:= "print"
+
+INT_LITERAL	:= [0-9]*
+

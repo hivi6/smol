@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lexer.h"
+
 // ========================================
 // helper declaration
 // ========================================
@@ -22,7 +24,18 @@ int main(int argc, const char **argv) {
 	const char *filepath = argv[1];
 	char *src = read_file(filepath);
 
-	printf("%s:\n%s\n", filepath, src);
+	token_t *tokens = tokenize(filepath, src);
+	if (tokens == NULL) {
+		exit(1);
+	}
+
+	for (token_t *cur = tokens; cur->type != TT_EOF; cur++) {
+		printf("%s | '%.*s'\n", token_type_str(*cur), 
+			cur->end.index - cur->start.index, cur->src + cur->start.index);
+	}
+
+	free(src);
+	free(tokens);
 
 	return 0;
 }

@@ -16,12 +16,39 @@ char *read_file(const char *filepath);
 // ========================================
 
 int main(int argc, const char **argv) {
-	if (argc <= 1) {
-		usage(stderr);
+	int index = 1;
+	int usage_flag = 0;
+	const char *output_file = "a.out";
+	while (index < argc) {
+		if (strcmp("--help", argv[index]) == 0 ||
+			strcmp("-h", argv[index]) == 0) {
+			usage_flag = 1;
+		}
+		else if (strcmp("--output", argv[index]) == 0) {
+			index++;
+			if (index >= argc) {
+				fprintf(stderr, "ERROR: Expected filepath after --output flag\n");
+				usage(stderr);
+				return 1;
+			}
+			output_file = argv[index];
+		}
+		else break;
+		index++;
+	}
+
+	if (usage_flag) {
+		usage(stdout);
 		return 0;
 	}
 
-	const char *filepath = argv[1];
+	if (index >= argc) {
+		fprintf(stderr, "ERROR: Expected source files\n");
+		usage(stderr);
+		return 1;
+	}
+
+	const char *filepath = argv[index];
 	char *src = read_file(filepath);
 
 	token_t *tokens = tokenize(filepath, src);
@@ -48,6 +75,8 @@ void usage(FILE *fd) {
 	fprintf(fd, "USAGE: ./smol [flags] <filename>\n");
 	fprintf(fd, "\n");
 	fprintf(fd, "FLAGS:\n");
+	fprintf(fd, "        --help, -h                 This screen\n");
+	fprintf(fd, "        --output <filename>        Change the output filepath\n");
 	fprintf(fd, "\n");
 	fprintf(fd, "MORE INFO:\n");
 	fprintf(fd, "        - To read from stdin run as follows './smol -'\n");

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "lexer.h"
+#include "parser.h"
 
 // ========================================
 // helper declaration
@@ -19,6 +20,7 @@ int main(int argc, const char **argv) {
 	int index = 1;
 	int usage_flag = 0;
 	const char *output_file = "a.out";
+	int lexer_flag = 0;
 	while (index < argc) {
 		if (strcmp("--help", argv[index]) == 0 ||
 			strcmp("-h", argv[index]) == 0) {
@@ -32,6 +34,9 @@ int main(int argc, const char **argv) {
 				return 1;
 			}
 			output_file = argv[index];
+		}
+		else if (strcmp("--only-lexer", argv[index]) == 0) {
+			lexer_flag = 1;
 		}
 		else break;
 		index++;
@@ -56,10 +61,19 @@ int main(int argc, const char **argv) {
 		exit(1);
 	}
 
-	for (token_t *cur = tokens; cur->type != TT_EOF; cur++) {
-		printf("%s | '%.*s'\n", token_type_str(*cur), 
-			cur->end.index - cur->start.index, cur->src + cur->start.index);
+	if (lexer_flag) {
+		for (token_t *cur = tokens; cur->type != TT_EOF; cur++) {
+			printf("%s | '%.*s'\n", token_type_str(*cur), 
+				cur->end.index - cur->start.index, cur->src + cur->start.index);
+		}
+		return 0;
 	}
+
+	ast_t *ast = parse(tokens);
+	if (ast == NULL) {
+		exit(1);
+	}
+	ast_print(ast);
 
 	free(src);
 	free(tokens);

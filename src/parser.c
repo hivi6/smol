@@ -28,6 +28,7 @@ void parser_error_print();
 void parser_error_clear();
 void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message);
 
+ast_t *parser_rule_expr_stmt();
 ast_t *parser_rule_expr();
 ast_t *parser_rule_assign();
 ast_t *parser_rule_ternary();
@@ -52,7 +53,7 @@ ast_t *parser_rule_primary();
 ast_t *parse(token_t *tokens) {
 	parser_init(tokens);
 
-	ast_t *res = parser_rule_expr();
+	ast_t *res = parser_rule_expr_stmt();
 	if (parser_error_check()) {
 		parser_error_print();
 		parser_error_clear();
@@ -115,6 +116,24 @@ void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t 
 	g_error_start = start;
 	g_error_end = end;
 	g_error_message = message;
+}
+
+ast_t *parser_rule_expr_stmt() {
+	ast_t *expr = parser_rule_expr();
+	if (expr == NULL) {
+		return NULL;
+	}
+
+	token_t semicolon = parser_current();
+	if (semicolon.type != TT_SEMICOLON) {
+		parser_error_set(expr->filepath, expr->src, expr->start, semicolon.end, 
+			"Expected ';' after expression");
+		ast_free(expr);
+		return NULL;
+	}
+	parser_next();
+
+	return ast_expr_stmt(expr, semicolon);
 }
 
 ast_t *parser_rule_expr() {

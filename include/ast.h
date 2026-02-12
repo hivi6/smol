@@ -12,6 +12,7 @@ enum {
 	AST_BINARY,
 	AST_TERNARY,
 	AST_IDENTIFIER,
+	AST_EXPR_STMT,
 };
 
 struct ast_t {
@@ -45,6 +46,11 @@ struct ast_t {
 	struct {
 		token_t token;
 	} identifier;
+
+	struct {
+		struct ast_t *expr;
+		token_t semicolon;
+	} expr_stmt;
 };
 
 typedef struct ast_t ast_t;
@@ -116,6 +122,15 @@ ast_t *ast_ternary(ast_t *left, ast_t *mid, ast_t *right);
  * 	ast memory
  */
 ast_t *ast_identifier(token_t token);
+
+/**
+ * Create a expr stmt ast
+ *
+ * Parameter:
+ * 	expr		the expression ast
+ * 	semicolon	the semicolon token
+ */
+ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon);
 
 /**
  * Print the given ast

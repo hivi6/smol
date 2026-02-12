@@ -73,6 +73,13 @@ ast_t *ast_identifier(token_t token) {
 	return res;
 }
 
+ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon) {
+	ast_t *res = ast_malloc(AST_EXPR_STMT, expr->start, semicolon.end, expr->filepath, expr->src);
+	res->expr_stmt.expr = expr;
+	res->expr_stmt.semicolon = semicolon;
+	return res;
+}
+
 void ast_print(ast_t *ast) {
 	char last[AST_PRINT_DEPTH] = {};
 	printf("AST\n");
@@ -150,6 +157,13 @@ void ast_print_helper(ast_t *ast, char *last, int depth) {
 		printf(")\n");
 
 		last[depth+1] = 0;
+		break;
+
+	case AST_EXPR_STMT:
+		printf("+-- AST_EXPR_STMT\n");
+
+		last[depth+1] = 0;
+		ast_print_helper(ast->expr_stmt.expr, last, depth+1);
 		break;
 	}
 }

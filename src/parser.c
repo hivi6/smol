@@ -31,6 +31,7 @@ void parser_error_clear();
 void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message);
 
 ast_t *parser_rule_prog();
+ast_t *parser_rule_stmt();
 ast_t *parser_rule_label_stmt();
 ast_t *parser_rule_var_stmt();
 ast_t *parser_rule_expr_stmt();
@@ -132,15 +133,7 @@ ast_t *parser_rule_prog() {
 	ast_t *prog = ast_prog();
 
 	while (parser_current_token().type != TT_EOF) {
-		ast_t *stmt = NULL;
-
-		if (parser_current_token().type == TT_IDENTIFIER && parser_next_token().type == TT_COLON)
-			stmt = parser_rule_label_stmt();
-		else if (parser_current_token().type == TT_VAR_KEYWORD)
-			stmt = parser_rule_var_stmt();
-		else
-			stmt = parser_rule_expr_stmt();
-
+		ast_t *stmt = parser_rule_stmt();
 		if (parser_error_check()) {
 			ast_free(stmt);
 			ast_free(prog);
@@ -150,6 +143,24 @@ ast_t *parser_rule_prog() {
 	}
 
 	return prog;
+}
+
+ast_t *parser_rule_stmt() {
+	ast_t *stmt = NULL;
+
+	if (parser_current_token().type == TT_IDENTIFIER && parser_next_token().type == TT_COLON)
+		stmt = parser_rule_label_stmt();
+	else if (parser_current_token().type == TT_VAR_KEYWORD)
+		stmt = parser_rule_var_stmt();
+	else
+		stmt = parser_rule_expr_stmt();
+
+	if (parser_error_check()) {
+		ast_free(stmt);
+		return NULL;
+	}
+
+	return stmt;
 }
 
 ast_t *parser_rule_label_stmt() {

@@ -46,6 +46,8 @@ void ast_free(ast_t *ast) {
 	case AST_PRINT_STMT:
 		ast_free(ast->print_stmt.expr);
 		break;
+	case AST_GOTO_STMT:
+		break;
 	case AST_PROG: {
 		for (int i = 0; i < ast->prog.len; i++) {
 			ast_free(ast->prog.stmts[i]);

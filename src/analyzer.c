@@ -27,6 +27,10 @@ void analyzer_rule_prog(ast_t *ast);
 void analyzer_rule_stmt(ast_t *stmt);
 void analyzer_rule_label_stmt(ast_t *stmt);
 void analyzer_rule_var_stmt(ast_t *stmt);
+void analyzer_rule_if_stmt(ast_t *stmt);
+void analyzer_rule_goto_stmt(ast_t *stmt);
+void analyzer_rule_print_stmt(ast_t *stmt);
+void analyzer_rule_expr_stmt(ast_t *stmt);
 void analyzer_rule_expr(ast_t *expr);
 void analyzer_rule_literal(ast_t *expr);
 void analyzer_rule_identifier(ast_t *expr);
@@ -117,6 +121,18 @@ void analyzer_rule_stmt(ast_t *stmt) {
 	case AST_VAR_STMT:
 		analyzer_rule_var_stmt(stmt);
 		break;
+	case AST_IF_STMT:
+		analyzer_rule_if_stmt(stmt);
+		break;
+	case AST_GOTO_STMT:
+		analyzer_rule_goto_stmt(stmt);
+		break;
+	case AST_PRINT_STMT:
+		analyzer_rule_print_stmt(stmt);
+		break;
+	case AST_EXPR_STMT:
+		analyzer_rule_expr_stmt(stmt);
+		break;
 	default:
 		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end, "unexpected statement");
 		break;
@@ -180,6 +196,75 @@ void analyzer_rule_var_stmt(ast_t *stmt) {
 
 cleanup:
 	free(lexical);
+}
+
+void analyzer_rule_if_stmt(ast_t *stmt) {
+	if (stmt->type != AST_IF_STMT) {
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end,
+			"expected AST_IF_STMT ast");
+		return;
+	}
+
+	analyzer_rule_expr(stmt->if_stmt.if_cond);
+	if (analyzer_error_check()) {
+		return;
+	}
+
+	if (!is_numerical_type(stmt->if_stmt.if_cond->type_id)) {
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end,
+			"expected numerical type in if condition");
+		return;
+	}
+
+	analyzer_rule_stmt(stmt->if_stmt.if_block);
+	if (analyzer_error_check()) {
+		return;
+	}
+
+	if (!stmt->if_stmt.else_block) return;
+
+	analyzer_rule_stmt(stmt->if_stmt.else_block);
+}
+
+void analyzer_rule_goto_stmt(ast_t *stmt) {
+	char *lexical = NULL;
+
+	if (stmt->type != AST_GOTO_STMT) {
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end,
+			"expected AST_GOTO_STMT ast");
+		goto cleanup;
+	}
+
+	token_t label_token = stmt->goto_stmt.label;
+	lexical = token_lexical(label_token);
+	if (st_check_label(lexical).id == -1) {
+		analyzer_error_set(label_token.filepath, label_token.src, label_token.start, label_token.end,
+			"label not defined");
+		goto cleanup;
+	}
+
+cleanup:
+	free(lexical);
+}
+
+void analyzer_rule_print_stmt(ast_t *stmt) {
+	if (stmt->type != AST_PRINT_STMT) {
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end,
+			"expected AST_PRINT_STMT ast");
+		return;
+	}
+
+	analyzer_rule_expr(stmt->print_stmt.expr);
+}
+
+void analyzer_rule_expr_stmt(ast_t *stmt) {
+	if (stmt->type != AST_EXPR_STMT) {
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end,
+			"expected AST_EXPR_STMT ast");
+		return;
+	}
+
+	analyzer_rule_expr(stmt->expr_stmt.expr);
 }
 
 void analyzer_rule_expr(ast_t *expr) {

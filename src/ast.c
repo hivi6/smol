@@ -20,6 +20,7 @@ void ast_free(ast_t *ast) {
 
 	switch (ast->type) {
 	case AST_LITERAL:
+	case AST_IDENTIFIER:
 		break;
 	case AST_UNARY:
 		ast_free(ast->unary.right);
@@ -32,6 +33,9 @@ void ast_free(ast_t *ast) {
 		ast_free(ast->ternary.left);
 		ast_free(ast->ternary.mid);
 		ast_free(ast->ternary.right);
+		break;
+	case AST_EXPR_STMT:
+		ast_free(ast->expr_stmt.expr);
 		break;
 	}
 

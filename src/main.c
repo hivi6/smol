@@ -74,6 +74,7 @@ int main(int argc, const char **argv) {
 		exit(1);
 	}
 	ast_print(ast);
+	ast_free(ast);
 
 	free(src);
 	free(tokens);

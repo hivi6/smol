@@ -102,6 +102,11 @@ ast_t *ast_prog() {
 void ast_prog_append(ast_t *prog, ast_t *stmt) {
 	assert(prog->type == AST_PROG);
 
+	if (prog->prog.len == 0) prog->start = stmt->start;
+	prog->end = stmt->end;
+	prog->filepath = stmt->filepath;
+	prog->src = stmt->src;
+
 	prog->prog.len++;
 	if (prog->prog.cap <= prog->prog.len) {
 		prog->prog.cap = (prog->prog.cap + 1) * 2;

@@ -30,6 +30,10 @@ void analyzer_rule_var_stmt(ast_t *stmt);
 void analyzer_rule_expr(ast_t *expr);
 void analyzer_rule_literal(ast_t *expr);
 void analyzer_rule_identifier(ast_t *expr);
+void analyzer_rule_unary(ast_t *expr);
+
+int is_numerical_type(int type_id);
+int is_lhs(ast_t *expr);
 
 // ========================================
 // analyzer.h - definition
@@ -182,6 +186,9 @@ void analyzer_rule_expr(ast_t *expr) {
 	case AST_IDENTIFIER:
 		analyzer_rule_identifier(expr);
 		break;
+	case AST_UNARY:
+		analyzer_rule_unary(expr);
+		break;
 	default:
 		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
 			"unexpected expression");
@@ -235,3 +242,58 @@ void analyzer_rule_identifier(ast_t *expr) {
 cleanup:
 	free(lexical);
 }
+
+void analyzer_rule_unary(ast_t *expr) {
+	if (expr->type != AST_UNARY) {
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"expected AST_UNARY ast");
+		return;
+	}
+
+	switch (expr->unary.op.type) {
+	case TT_BANG:
+	case TT_TILDE:
+	case TT_MINUS:
+	case TT_PLUS:
+		analyzer_rule_expr(expr->unary.right);
+		if (analyzer_error_check()) {
+			return;
+		}
+
+		if (!is_numerical_type(expr->unary.right->type_id)) {
+			analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+				"expected numerical type in unary expression");
+		}
+
+		expr->type_id = expr->unary.right->type_id;
+		break;
+	
+	case TT_MINUS_MINUS:
+	case TT_PLUS_PLUS:
+		if (!is_lhs(expr->unary.right)) {
+			analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+				"expected lhs");
+		}
+
+		analyzer_rule_expr(expr->unary.right);
+		if (analyzer_error_check()) {
+			return;
+		}
+	
+		expr->type_id = expr->unary.right->type_id;
+		break;
+	
+	default:
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"unexpected unary operation");
+	}
+}
+
+int is_numerical_type(int type_id) {
+	return st_check_type("int").id == type_id;
+}
+
+int is_lhs(ast_t *expr) {
+	return expr->type == AST_IDENTIFIER;
+}
+

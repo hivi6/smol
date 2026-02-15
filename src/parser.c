@@ -209,6 +209,7 @@ ast_t *parser_rule_var_stmt() {
 		ast_free(expr);
 		parser_error_set(var_keyword.filepath, var_keyword.src, var_keyword.start, 
 			semicolon.end, "Expected ';' at the end of 'var' statement");
+		return NULL;
 	}
 	parser_next();
 

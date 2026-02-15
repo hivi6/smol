@@ -27,6 +27,7 @@ struct ast_t {
 	pos_t end;
 	const char *filepath;
 	const char *src;
+	int type_id;
 
 	struct {
 		token_t token;

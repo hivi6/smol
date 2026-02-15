@@ -4,6 +4,7 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "analyzer.h"
 
 // ========================================
 // helper declaration
@@ -20,7 +21,7 @@ int main(int argc, const char **argv) {
 	int index = 1;
 	int usage_flag = 0;
 	const char *output_file = "a.out";
-	int lexer_flag = 0;
+	int lexer_flag = 0, parser_flag = 0;
 	while (index < argc) {
 		if (strcmp("--help", argv[index]) == 0 ||
 			strcmp("-h", argv[index]) == 0) {
@@ -37,6 +38,9 @@ int main(int argc, const char **argv) {
 		}
 		else if (strcmp("--only-lexer", argv[index]) == 0) {
 			lexer_flag = 1;
+		}
+		else if (strcmp("--only-parser", argv[index]) == 0) {
+			parser_flag = 1;
 		}
 		else break;
 		index++;
@@ -73,9 +77,17 @@ int main(int argc, const char **argv) {
 	if (ast == NULL) {
 		exit(1);
 	}
-	ast_print(ast);
-	ast_free(ast);
+	if (parser_flag) {
+		ast_print(ast);
+		return 0;
+	}
 
+	int error = analyze(ast);
+	if (error) {
+		exit(1);
+	}
+
+	ast_free(ast);
 	free(src);
 	free(tokens);
 
@@ -92,6 +104,8 @@ void usage(FILE *fd) {
 	fprintf(fd, "FLAGS:\n");
 	fprintf(fd, "        --help, -h                 This screen\n");
 	fprintf(fd, "        --output <filename>        Change the output filepath\n");
+	fprintf(fd, "        --only-lexer               Print only the output of lexer\n");
+	fprintf(fd, "        --only-parser              Print only the output of parser\n");
 	fprintf(fd, "\n");
 	fprintf(fd, "MORE INFO:\n");
 	fprintf(fd, "        - To read from stdin run as follows './smol -'\n");

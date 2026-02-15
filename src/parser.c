@@ -35,6 +35,7 @@ ast_t *parser_rule_stmt();
 ast_t *parser_rule_label_stmt();
 ast_t *parser_rule_var_stmt();
 ast_t *parser_rule_print_stmt();
+ast_t *parser_rule_goto_stmt();
 ast_t *parser_rule_expr_stmt();
 ast_t *parser_rule_expr();
 ast_t *parser_rule_assign();
@@ -155,6 +156,8 @@ ast_t *parser_rule_stmt() {
 		stmt = parser_rule_var_stmt();
 	else if (parser_current_token().type == TT_PRINT_KEYWORD)
 		stmt = parser_rule_print_stmt();
+	else if (parser_current_token().type == TT_GOTO_KEYWORD)
+		stmt = parser_rule_goto_stmt();
 	else
 		stmt = parser_rule_expr_stmt();
 
@@ -222,11 +225,35 @@ ast_t *parser_rule_print_stmt() {
 	if (semicolon.type != TT_SEMICOLON) {
 		ast_free(expr);
 		parser_error_set(print_keyword.filepath, print_keyword.src, print_keyword.start, 
-			semicolon.end, "Expected ';' at the end of 'print' statement");
+			semicolon.end, "expected ';' at the end of 'print' statement");
+		return NULL;
 	}
 	parser_next();
 
 	return ast_print_stmt(print_keyword, expr, semicolon);
+}
+
+ast_t *parser_rule_goto_stmt() {
+	token_t goto_keyword = parser_current_token();
+	parser_next();
+
+	token_t label = parser_current_token();
+	if (label.type != TT_IDENTIFIER) {
+		parser_error_set(goto_keyword.filepath, goto_keyword.src, goto_keyword.start,
+			label.end, "Expected identifier after 'goto' statement");
+		return NULL;
+	}
+	parser_next();
+
+	token_t semicolon = parser_current_token();
+	if (semicolon.type != TT_SEMICOLON) {
+		parser_error_set(goto_keyword.filepath, goto_keyword.src, goto_keyword.start, 
+			semicolon.end, "expected ';' at the end of 'goto' statement");
+		return NULL;
+	}
+	parser_next();
+
+	return ast_goto_stmt(goto_keyword, label, semicolon);
 }
 
 ast_t *parser_rule_expr_stmt() {

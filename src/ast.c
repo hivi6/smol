@@ -117,6 +117,14 @@ ast_t *ast_print_stmt(token_t print_keyword, ast_t *expr, token_t semicolon) {
 	return res;
 }
 
+ast_t *ast_goto_stmt(token_t goto_keyword, token_t label, token_t semicolon) {
+	ast_t *res = ast_malloc(AST_GOTO_STMT, goto_keyword.start, semicolon.end, label.filepath, label.src);
+	res->goto_stmt.goto_keyword = goto_keyword;
+	res->goto_stmt.label = label;
+	res->goto_stmt.semicolon = semicolon;
+	return res;
+}
+
 ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon) {
 	ast_t *res = ast_malloc(AST_EXPR_STMT, expr->start, semicolon.end, expr->filepath, expr->src);
 	res->expr_stmt.expr = expr;
@@ -255,6 +263,14 @@ void ast_print_helper(ast_t *ast, char *last, int depth) {
 
 		last[depth+1] = 0;
 		ast_print_helper(ast->print_stmt.expr, last, depth+1);
+		break;
+
+	case AST_GOTO_STMT:
+		printf("+-- AST_GOTO_STMT(");
+		ast_print_token(ast->goto_stmt.label);
+		printf(")\n");
+
+		last[depth+1] = 0;
 		break;
 
 	case AST_EXPR_STMT:

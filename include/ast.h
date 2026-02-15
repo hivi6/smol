@@ -16,6 +16,7 @@ enum {
 	AST_LABEL_STMT,
 	AST_VAR_STMT,
 	AST_PRINT_STMT,
+	AST_GOTO_STMT,
 	AST_EXPR_STMT,
 };
 
@@ -73,6 +74,12 @@ struct ast_t {
 		struct ast_t *expr;
 		token_t semicolon;
 	} print_stmt;
+
+	struct {
+		token_t goto_keyword;
+		token_t label;
+		token_t semicolon;
+	} goto_stmt;
 
 	struct {
 		struct ast_t **stmts;
@@ -201,6 +208,19 @@ ast_t *ast_var_stmt(token_t var_keyword, token_t name, ast_t *expr, token_t semi
  * 	ast memory
  */
 ast_t *ast_print_stmt(token_t print_keyword, ast_t *expr, token_t semicolon);
+
+/**
+ * Create a goto stmt ast
+ *
+ * Parameters:
+ * 	goto_keyword	goto keyword
+ * 	label		label identifier
+ * 	semicolon	semicolon at the end of the statement
+ *
+ * Returns:
+ * 	ast memory
+ */
+ast_t *ast_goto_stmt(token_t goto_keyword, token_t label, token_t semicolon);
 
 /**
  * Create a prog ast

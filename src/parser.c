@@ -34,6 +34,7 @@ ast_t *parser_rule_prog();
 ast_t *parser_rule_stmt();
 ast_t *parser_rule_label_stmt();
 ast_t *parser_rule_var_stmt();
+ast_t *parser_rule_print_stmt();
 ast_t *parser_rule_expr_stmt();
 ast_t *parser_rule_expr();
 ast_t *parser_rule_assign();
@@ -152,6 +153,8 @@ ast_t *parser_rule_stmt() {
 		stmt = parser_rule_label_stmt();
 	else if (parser_current_token().type == TT_VAR_KEYWORD)
 		stmt = parser_rule_var_stmt();
+	else if (parser_current_token().type == TT_PRINT_KEYWORD)
+		stmt = parser_rule_print_stmt();
 	else
 		stmt = parser_rule_expr_stmt();
 
@@ -204,6 +207,26 @@ ast_t *parser_rule_var_stmt() {
 	parser_next();
 
 	return ast_var_stmt(var_keyword, name, expr, semicolon);
+}
+
+ast_t *parser_rule_print_stmt() {
+	token_t print_keyword = parser_current_token();
+	parser_next();
+
+	ast_t *expr = parser_rule_expr();
+	if (parser_error_check()) {
+		return NULL;
+	}
+
+	token_t semicolon = parser_current_token();
+	if (semicolon.type != TT_SEMICOLON) {
+		ast_free(expr);
+		parser_error_set(print_keyword.filepath, print_keyword.src, print_keyword.start, 
+			semicolon.end, "Expected ';' at the end of 'print' statement");
+	}
+	parser_next();
+
+	return ast_print_stmt(print_keyword, expr, semicolon);
 }
 
 ast_t *parser_rule_expr_stmt() {

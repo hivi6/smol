@@ -43,6 +43,9 @@ void ast_free(ast_t *ast) {
 	case AST_VAR_STMT:
 		ast_free(ast->var_stmt.expr);
 		break;
+	case AST_PRINT_STMT:
+		ast_free(ast->print_stmt.expr);
+		break;
 	case AST_PROG: {
 		for (int i = 0; i < ast->prog.len; i++) {
 			ast_free(ast->prog.stmts[i]);
@@ -103,6 +106,14 @@ ast_t *ast_var_stmt(token_t var_keyword, token_t name, ast_t *expr, token_t semi
 	res->var_stmt.name = name;
 	res->var_stmt.expr = expr;
 	res->var_stmt.semicolon = semicolon;
+	return res;
+}
+
+ast_t *ast_print_stmt(token_t print_keyword, ast_t *expr, token_t semicolon) {
+	ast_t *res = ast_malloc(AST_PRINT_STMT, print_keyword.start, semicolon.end, expr->filepath, expr->src);
+	res->print_stmt.print_keyword = print_keyword;
+	res->print_stmt.expr = expr;
+	res->print_stmt.semicolon = semicolon;
 	return res;
 }
 
@@ -237,6 +248,13 @@ void ast_print_helper(ast_t *ast, char *last, int depth) {
 		if (ast->var_stmt.expr) {
 			ast_print_helper(ast->var_stmt.expr, last, depth+1);
 		}
+		break;
+
+	case AST_PRINT_STMT:
+		printf("+-- AST_PRINT_STMT\n");
+
+		last[depth+1] = 0;
+		ast_print_helper(ast->print_stmt.expr, last, depth+1);
 		break;
 
 	case AST_EXPR_STMT:

@@ -3,6 +3,8 @@
 #include "pos.h"
 #include "st.h"
 
+#include <stdlib.h>
+
 // ========================================
 // helper declaration
 // ========================================
@@ -14,6 +16,7 @@ static pos_t g_error_start, g_error_end;
 static const char *g_error_message;
 
 void analyzer_init();
+void analyzer_free();
 
 void analyzer_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message);
 void analyzer_error_print();
@@ -23,18 +26,26 @@ int analyzer_error_check();
 void analyzer_rule_prog(ast_t *ast);
 void analyzer_rule_stmt(ast_t *stmt);
 void analyzer_rule_label_stmt(ast_t *stmt);
+void analyzer_rule_var_stmt(ast_t *stmt);
+void analyzer_rule_expr(ast_t *expr);
+void analyzer_rule_literal(ast_t *expr);
+void analyzer_rule_identifier(ast_t *expr);
 
 // ========================================
 // analyzer.h - definition
 // ========================================
 
 int analyze(ast_t *ast) {
+	analyzer_init();
+
 	analyzer_rule_prog(ast);
 	if (analyzer_error_check()) {
 		analyzer_error_print();
 		analyzer_error_clear();
 		return 1;
 	}
+
+	analyzer_free();
 
 	return 0;
 }
@@ -47,7 +58,11 @@ void analyzer_init() {
 	g_has_error = 0;
 
 	st_init();
-	st_create_type("int", 3);
+	st_create_type("int");
+}
+
+void analyzer_free() {
+	st_free();
 }
 
 void analyzer_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message) {
@@ -91,6 +106,9 @@ void analyzer_rule_stmt(ast_t *stmt) {
 	case AST_LABEL_STMT:
 		analyzer_rule_label_stmt(stmt);
 		break;
+	case AST_VAR_STMT:
+		analyzer_rule_var_stmt(stmt);
+		break;
 	default:
 		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end, "unexpected statement");
 		break;
@@ -98,20 +116,122 @@ void analyzer_rule_stmt(ast_t *stmt) {
 }
 
 void analyzer_rule_label_stmt(ast_t *stmt) {
+	char *lexical = NULL;
+
 	if (stmt->type != AST_LABEL_STMT) {
 		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end, 
-			"expeceted AST_LABEL_STMT ast");
-		return;
+			"expected AST_LABEL_STMT ast");
+		goto cleanup;
 	}
 
 	token_t label_token = stmt->label_stmt.label;
-	const char *label_start = label_token.src + label_token.start.index;
-	int label_len = label_token.end.index - label_token.start.index;
-	if (st_check_label(label_start, label_len) != -1) {
+	lexical = token_lexical(label_token);
+	if (st_check_label(lexical).id != -1) {
 		analyzer_error_set(label_token.filepath, label_token.src, label_token.start, label_token.end,
-			"label already exists");
-		return;
+			"label already declared");
+		goto cleanup;
 	}
-	st_create_label(label_start, label_len);
+	st_create_label(lexical);
+
+cleanup:
+	free(lexical);
 }
 
+void analyzer_rule_var_stmt(ast_t *stmt) {
+	char *lexical = NULL;
+
+	if (stmt->type != AST_VAR_STMT) {
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end,
+			"expected AST_VAR_STMT ast");
+		goto cleanup;
+	}
+
+	token_t var_token = stmt->var_stmt.name;
+	lexical = token_lexical(var_token);
+	if (st_check_var(lexical).id != -1) {
+		analyzer_error_set(var_token.filepath, var_token.src, var_token.start, var_token.end,
+			"variable already declared");
+		goto cleanup;
+	}
+	int type_id = st_check_type("int").id;
+
+	if (stmt->var_stmt.expr) {
+		analyzer_rule_expr(stmt->var_stmt.expr);
+		if (analyzer_error_check()) {
+			goto cleanup;
+		}
+
+		if (type_id != stmt->var_stmt.expr->type_id) {
+			analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end,
+				"variable and expression are of different type");
+			goto cleanup;
+		}
+	}
+
+	st_create_var(lexical, type_id);
+
+cleanup:
+	free(lexical);
+}
+
+void analyzer_rule_expr(ast_t *expr) {
+	switch (expr->type) {
+	case AST_LITERAL:
+		analyzer_rule_literal(expr);
+		break;
+	case AST_IDENTIFIER:
+		analyzer_rule_identifier(expr);
+		break;
+	default:
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"unexpected expression");
+	}
+}
+
+void analyzer_rule_literal(ast_t *expr) {
+	if (expr->type != AST_LITERAL) {
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"expected AST_LITERAL ast");
+		return;
+	}
+
+	token_t token = expr->literal.token;
+	if (token.type == TT_INT_LITERAL) {
+		expr->type_id = st_check_type("int").id;
+	}
+	else {
+		analyzer_error_set(token.filepath, token.src, token.start, token.end,
+			"unexpected literal token");
+		return;
+	}
+}
+
+void analyzer_rule_identifier(ast_t *expr) {
+	char *lexical = NULL;
+
+	if (expr->type != AST_IDENTIFIER) {
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"expected AST_IDENTIFIER ast");
+		goto cleanup;
+	}
+
+	token_t token = expr->identifier.token;
+	lexical = token_lexical(token);
+	if (token.type == TT_IDENTIFIER) {
+		name_t name = st_check_var(lexical);
+		if (name.id == -1) {
+			analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+				"variable undefined");
+			goto cleanup;
+		}
+		expr->type_id = name.type_id;
+	}
+	else {
+		analyzer_error_set(token.filepath, token.src, token.start, token.end,
+			"unexpected identifier token");
+		goto cleanup;
+	}
+
+cleanup:
+	free(lexical);
+}

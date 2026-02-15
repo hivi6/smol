@@ -1,5 +1,8 @@
 #include "token.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 // ========================================
 // token.h - definition
 // ========================================
@@ -42,5 +45,19 @@ const char *token_type_str(token_t token) {
 	if (token.type == TT_PRINT_KEYWORD) return "TT_PRINT_KEYWORD";
 	if (token.type == TT_INT_LITERAL) return "TT_INT_LITERAL";
 	return "UNKNOWN";
+}
+
+char *token_lexical(token_t token) {
+	int lexical_len = token.end.index - token.start.index;
+	char *lexical = malloc((lexical_len + 1) * sizeof(char));
+	if (lexical == NULL) {
+		perror("something went wrong with malloc in token_lexical");
+		exit(1);
+	}
+	for (int i = token.start.index; i < token.end.index; i++) {
+		lexical[i-token.start.index] = token.src[i];
+	}
+	lexical[lexical_len] = 0;
+	return lexical;
 }
 

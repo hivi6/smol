@@ -56,4 +56,15 @@ typedef struct {
  */
 const char *token_type_str(token_t token);
 
+/**
+ * Get the token lexical
+ *
+ * Parameter:
+ * 	token	whose lexical is generated
+ *
+ * Returns:
+ * 	character array with lexical string (memory needs to be freed by user)
+ */
+char *token_lexical(token_t token);
+
 #endif // TOKEN_H

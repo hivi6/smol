@@ -1,6 +1,12 @@
 #ifndef ST_H
 #define ST_H
 
+typedef struct {
+	int id;
+	char *name;
+	int type_id;
+} name_t;
+
 /**
  * initialize the symbol table
  */
@@ -16,49 +22,67 @@ void st_free();
  *
  * Parameters:
  * 	name	Name of a type
- * 	len	Length of the name string
  *
  * Returns:
- * 	type id
+ * 	name_t type
  */
-int st_create_type(const char *name, int len);
+name_t st_create_type(const char *name);
 
 /**
  * Check if the type exists
  *
  * Parameters:
  * 	name	Name of a type
- * 	len	Length of the name string
  *
  * Returns:
- * 	type id (-1 if doesn't exists)
+ * 	name_t type (id = -1 if doesn't exists)
  */
-int st_check_type(const char *name, int len);
+name_t st_check_type(const char *name);
 
 /**
  * Create a new label
  *
  * Parameters:
  *	name	Name of the label
- *	len	Length of the name string
  *
  * Returns:
- * 	label id
+ * 	name_t type 
  */
-int st_create_label(const char *name, int len);
+name_t st_create_label(const char *name);
 
 /**
  * Check if label exists
  *
  * Parameters:
  * 	name	Name of the label
- * 	len	Length of the name string
  *
  * Returns:
- * 	-1 (invalid label)
- * 	non-negative integer for valid label id
+ * 	name_t type (id = -1 if doesn't exists)
  */
-int st_check_label(const char *name, int len);
+name_t st_check_label(const char *name);
+
+/**
+ * Create a new variable name
+ *
+ * Parameters:
+ * 	name	Name of the variable
+ * 	type_id	Type of the variable
+ *
+ * Returns:
+ * 	name_t type
+ */
+name_t st_create_var(const char *name, int type_id);
+
+/**
+ * Check if variable name exists
+ *
+ * Parameters:
+ * 	name	Name of the variable
+ *
+ * Returns:
+ * 	name_t type (id = -1 if doesn't exists)
+ */
+name_t st_check_var(const char *name);
 
 #endif // ST_H
 

@@ -21,6 +21,8 @@ void analyzer_error_clear();
 int analyzer_error_check();
 
 void analyzer_rule_prog(ast_t *ast);
+void analyzer_rule_stmt(ast_t *stmt);
+void analyzer_rule_label_stmt(ast_t *stmt);
 
 // ========================================
 // analyzer.h - definition
@@ -45,7 +47,7 @@ void analyzer_init() {
 	g_has_error = 0;
 
 	st_init();
-	st_create_type("int");
+	st_create_type("int", 3);
 }
 
 void analyzer_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message) {
@@ -77,12 +79,39 @@ void analyzer_rule_prog(ast_t *ast) {
 
 	for (int i = 0; i < ast->prog.len; i++) {
 		ast_t *stmt = ast->prog.stmts[i];
-		switch (stmt->type) {
-		default:
-			analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end, 
-				"unexpected ast type while semantic analyzing");
+		analyzer_rule_stmt(stmt);
+		if (analyzer_error_check()) {
 			return;
 		}
 	}
+}
+
+void analyzer_rule_stmt(ast_t *stmt) {
+	switch (stmt->type) {
+	case AST_LABEL_STMT:
+		analyzer_rule_label_stmt(stmt);
+		break;
+	default:
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end, "unexpected statement");
+		break;
+	}
+}
+
+void analyzer_rule_label_stmt(ast_t *stmt) {
+	if (stmt->type != AST_LABEL_STMT) {
+		analyzer_error_set(stmt->filepath, stmt->src, stmt->start, stmt->end, 
+			"expeceted AST_LABEL_STMT ast");
+		return;
+	}
+
+	token_t label_token = stmt->label_stmt.label;
+	const char *label_start = label_token.src + label_token.start.index;
+	int label_len = label_token.end.index - label_token.start.index;
+	if (st_check_label(label_start, label_len) != -1) {
+		analyzer_error_set(label_token.filepath, label_token.src, label_token.start, label_token.end,
+			"label already exists");
+		return;
+	}
+	st_create_label(label_start, label_len);
 }
 

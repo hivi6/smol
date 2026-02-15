@@ -12,8 +12,9 @@ enum {
 	AST_BINARY,
 	AST_TERNARY,
 	AST_IDENTIFIER,
-	AST_EXPR_STMT,
 	AST_PROG,
+	AST_LABEL_STMT,
+	AST_EXPR_STMT,
 };
 
 struct ast_t {
@@ -52,6 +53,11 @@ struct ast_t {
 		struct ast_t *expr;
 		token_t semicolon;
 	} expr_stmt;
+
+	struct {
+		token_t label;
+		token_t colon;
+	} label_stmt;
 
 	struct {
 		struct ast_t **stmts;
@@ -141,6 +147,18 @@ ast_t *ast_identifier(token_t token);
  * 	ast memory
  */
 ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon);
+
+/**
+ * Create a label stmt ast
+ *
+ * Parameter:
+ * 	label	label name of the stmt
+ * 	colon	the ending colon in the stmt
+ * 
+ * Returns:
+ * 	ast memory
+ */
+ast_t *ast_label_stmt(token_t label, token_t colon);
 
 /**
  * Create a prog ast

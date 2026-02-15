@@ -4,6 +4,7 @@
 #include "pos.h"
 #include "error.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,7 +21,8 @@ static pos_t g_error_start, g_error_end;
 static const char *g_error_message;
 
 void parser_init(token_t *token);
-token_t parser_current();
+token_t parser_current_token();
+token_t parser_next_token();
 void parser_next();
 
 char parser_error_check();
@@ -29,6 +31,7 @@ void parser_error_clear();
 void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message);
 
 ast_t *parser_rule_prog();
+ast_t *parser_rule_label_stmt();
 ast_t *parser_rule_expr_stmt();
 ast_t *parser_rule_expr();
 ast_t *parser_rule_assign();
@@ -61,7 +64,7 @@ ast_t *parse(token_t *tokens) {
 		return NULL;
 	}
 
-	token_t token = parser_current();
+	token_t token = parser_current_token();
 	if (token.type != TT_EOF) {
 		parser_error_set(token.filepath, token.src, token.start, token.end, "Expected EOF");
 		parser_error_print();
@@ -87,12 +90,17 @@ void parser_init(token_t *tokens) {
 	g_error_message = NULL;
 }
 
-token_t parser_current() {
+token_t parser_current_token() {
 	return g_tokens[g_index];
 }
 
+token_t parser_next_token() {
+	assert(parser_current_token().type != TT_EOF);
+	return g_tokens[g_index+1];
+}
+
 void parser_next() {
-	token_t cur = parser_current();
+	token_t cur = parser_current_token();
 	if (cur.type != TT_EOF) {
 		g_index++;
 	}
@@ -122,9 +130,16 @@ void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t 
 ast_t *parser_rule_prog() {
 	ast_t *prog = ast_prog();
 
-	while (parser_current().type != TT_EOF) {
-		ast_t *stmt = parser_rule_expr_stmt();
+	while (parser_current_token().type != TT_EOF) {
+		ast_t *stmt = NULL;
+
+		if (parser_current_token().type == TT_IDENTIFIER && parser_next_token().type == TT_COLON)
+			stmt = parser_rule_label_stmt();
+		else
+			stmt = parser_rule_expr_stmt();
+
 		if (parser_error_check()) {
+			ast_free(stmt);
 			ast_free(prog);
 			return NULL;
 		}
@@ -134,13 +149,23 @@ ast_t *parser_rule_prog() {
 	return prog;
 }
 
+ast_t *parser_rule_label_stmt() {
+	token_t label = parser_current_token();
+	parser_next();
+
+	token_t colon = parser_current_token();
+	parser_next();
+
+	return ast_label_stmt(label, colon);
+}
+
 ast_t *parser_rule_expr_stmt() {
 	ast_t *expr = parser_rule_expr();
 	if (expr == NULL) {
 		return NULL;
 	}
 
-	token_t semicolon = parser_current();
+	token_t semicolon = parser_current_token();
 	if (semicolon.type != TT_SEMICOLON) {
 		parser_error_set(expr->filepath, expr->src, expr->start, semicolon.end, 
 			"Expected ';' after expression");
@@ -162,8 +187,8 @@ ast_t *parser_rule_assign() {
 		return left;
 	}
 
-	if (parser_current().type == TT_EQUAL) {
-		token_t op = parser_current();
+	if (parser_current_token().type == TT_EQUAL) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_assign();
@@ -184,7 +209,7 @@ ast_t *parser_rule_ternary() {
 		return NULL;
 	}
 
-	if (parser_current().type == TT_QUESTION) {
+	if (parser_current_token().type == TT_QUESTION) {
 		parser_next();
 
 		ast_t *mid = parser_rule_ternary();
@@ -193,7 +218,7 @@ ast_t *parser_rule_ternary() {
 			return NULL;
 		}
 
-		token_t colon = parser_current();
+		token_t colon = parser_current_token();
 		if (colon.type != TT_COLON) {
 			parser_error_set(colon.filepath, colon.src, left->start, colon.end, 
 				"Expected ':' for ternary operator");
@@ -223,8 +248,8 @@ ast_t *parser_rule_logical_or() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_LOGICAL_OR) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_LOGICAL_OR) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_logical_and();
@@ -245,8 +270,8 @@ ast_t *parser_rule_logical_and() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_LOGICAL_AND) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_LOGICAL_AND) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_bitwise_or();
@@ -267,8 +292,8 @@ ast_t *parser_rule_bitwise_or() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_PIPE) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_PIPE) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_bitwise_xor();
@@ -289,8 +314,8 @@ ast_t *parser_rule_bitwise_xor() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_CARET) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_CARET) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_bitwise_and();
@@ -311,8 +336,8 @@ ast_t *parser_rule_bitwise_and() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_AMPERSAND) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_AMPERSAND) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_equality();
@@ -333,9 +358,9 @@ ast_t *parser_rule_equality() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_EQUAL_EQUAL || 
-		parser_current().type == TT_BANG_EQUAL) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_EQUAL_EQUAL || 
+		parser_current_token().type == TT_BANG_EQUAL) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_relation();
@@ -356,11 +381,11 @@ ast_t *parser_rule_relation() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_LESSER ||
-		parser_current().type == TT_LESSER_EQUAL ||
-		parser_current().type == TT_GREATER ||
-		parser_current().type == TT_GREATER_EQUAL) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_LESSER ||
+		parser_current_token().type == TT_LESSER_EQUAL ||
+		parser_current_token().type == TT_GREATER ||
+		parser_current_token().type == TT_GREATER_EQUAL) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_shift();
@@ -381,9 +406,9 @@ ast_t *parser_rule_shift() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_LSHIFT ||
-		parser_current().type == TT_RSHIFT) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_LSHIFT ||
+		parser_current_token().type == TT_RSHIFT) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_add();
@@ -404,9 +429,9 @@ ast_t *parser_rule_add() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_PLUS || 
-		parser_current().type == TT_MINUS) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_PLUS || 
+		parser_current_token().type == TT_MINUS) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_term();
@@ -427,10 +452,10 @@ ast_t *parser_rule_term() {
 		return NULL;
 	}
 
-	while (parser_current().type == TT_STAR ||
-		parser_current().type == TT_FSLASH ||
-		parser_current().type == TT_MOD) {
-		token_t op = parser_current();
+	while (parser_current_token().type == TT_STAR ||
+		parser_current_token().type == TT_FSLASH ||
+		parser_current_token().type == TT_MOD) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_unary();
@@ -446,13 +471,13 @@ ast_t *parser_rule_term() {
 }
 
 ast_t *parser_rule_unary() {
-	if (parser_current().type == TT_BANG ||
-		parser_current().type == TT_TILDE ||
-		parser_current().type == TT_MINUS ||
-		parser_current().type == TT_PLUS ||
-		parser_current().type == TT_MINUS_MINUS ||
-		parser_current().type == TT_PLUS_PLUS) {
-		token_t op = parser_current();
+	if (parser_current_token().type == TT_BANG ||
+		parser_current_token().type == TT_TILDE ||
+		parser_current_token().type == TT_MINUS ||
+		parser_current_token().type == TT_PLUS ||
+		parser_current_token().type == TT_MINUS_MINUS ||
+		parser_current_token().type == TT_PLUS_PLUS) {
+		token_t op = parser_current_token();
 		parser_next();
 
 		ast_t *right = parser_rule_unary();
@@ -467,8 +492,8 @@ ast_t *parser_rule_unary() {
 }
 
 ast_t *parser_rule_group() {
-	if (parser_current().type == TT_LPAREN) {
-		token_t lparen = parser_current();
+	if (parser_current_token().type == TT_LPAREN) {
+		token_t lparen = parser_current_token();
 		parser_next();
 
 		ast_t *res = parser_rule_expr();
@@ -476,7 +501,7 @@ ast_t *parser_rule_group() {
 			return NULL;
 		}
 
-		token_t token = parser_current();
+		token_t token = parser_current_token();
 		if (token.type != TT_RPAREN) {
 			parser_error_set(token.filepath, token.src, lparen.start, token.end, 
 				"Expected ')' for grouping");
@@ -492,7 +517,7 @@ ast_t *parser_rule_group() {
 }
 
 ast_t *parser_rule_primary() {
-	token_t token = parser_current();
+	token_t token = parser_current_token();
 	if (token.type == TT_INT_LITERAL) {
 		parser_next();
 		return ast_literal(token);

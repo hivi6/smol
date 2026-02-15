@@ -84,6 +84,13 @@ ast_t *ast_identifier(token_t token) {
 	return res;
 }
 
+ast_t *ast_label_stmt(token_t label, token_t colon) {
+	ast_t *res = ast_malloc(AST_LABEL_STMT, label.start, colon.end, label.filepath, label.src);
+	res->label_stmt.label = label;
+	res->label_stmt.colon = colon;
+	return res;
+}
+
 ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon) {
 	ast_t *res = ast_malloc(AST_EXPR_STMT, expr->start, semicolon.end, expr->filepath, expr->src);
 	res->expr_stmt.expr = expr;
@@ -193,6 +200,14 @@ void ast_print_helper(ast_t *ast, char *last, int depth) {
 	case AST_IDENTIFIER:
 		printf("+-- AST_IDENTIFER(");
 		ast_print_token(ast->identifier.token);
+		printf(")\n");
+
+		last[depth+1] = 0;
+		break;
+
+	case AST_LABEL_STMT:
+		printf("+-- AST_LABEL_STMT(");
+		ast_print_token(ast->label_stmt.label);
 		printf(")\n");
 
 		last[depth+1] = 0;

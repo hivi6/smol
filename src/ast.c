@@ -1,5 +1,6 @@
 #include "ast.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,6 +38,12 @@ void ast_free(ast_t *ast) {
 	case AST_EXPR_STMT:
 		ast_free(ast->expr_stmt.expr);
 		break;
+	case AST_PROG: {
+		for (int i = 0; i < ast->prog.len; i++) {
+			ast_free(ast->prog.stmts[i]);
+		}
+		free(ast->prog.stmts);
+	}
 	}
 
 	free(ast);
@@ -82,6 +89,29 @@ ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon) {
 	res->expr_stmt.expr = expr;
 	res->expr_stmt.semicolon = semicolon;
 	return res;
+}
+
+ast_t *ast_prog() {
+	pos_t pos;
+	ast_t *res = ast_malloc(AST_PROG, pos, pos, NULL, NULL);
+	res->prog.stmts = NULL;
+	res->prog.cap = res->prog.len = 0;
+	return res;
+}
+
+void ast_prog_append(ast_t *prog, ast_t *stmt) {
+	assert(prog->type == AST_PROG);
+
+	prog->prog.len++;
+	if (prog->prog.cap <= prog->prog.len) {
+		prog->prog.cap = (prog->prog.cap + 1) * 2;
+		prog->prog.stmts = realloc(prog->prog.stmts, sizeof(ast_t *) * prog->prog.cap);
+		if (prog->prog.stmts == NULL) {
+			perror("Something went wrong while realloc in ast_prog_append");
+			exit(1);
+		}
+	}
+	prog->prog.stmts[prog->prog.len-1] = stmt;
 }
 
 void ast_print(ast_t *ast) {
@@ -169,6 +199,17 @@ void ast_print_helper(ast_t *ast, char *last, int depth) {
 		last[depth+1] = 0;
 		ast_print_helper(ast->expr_stmt.expr, last, depth+1);
 		break;
+	
+	case AST_PROG: {
+		printf("+-- AST_PROG\n");
+
+		for (int i = 0; i < ast->prog.len; i++) {
+			if (i == ast->prog.len - 1) last[depth+1] = 0;
+			ast_print_helper(ast->prog.stmts[i], last, depth+1);
+		}
+		last[depth+1] = 0;
+		break;
+	}
 	}
 }
 

@@ -13,6 +13,7 @@ enum {
 	AST_TERNARY,
 	AST_IDENTIFIER,
 	AST_EXPR_STMT,
+	AST_PROG,
 };
 
 struct ast_t {
@@ -51,6 +52,12 @@ struct ast_t {
 		struct ast_t *expr;
 		token_t semicolon;
 	} expr_stmt;
+
+	struct {
+		struct ast_t **stmts;
+		int cap;
+		int len;
+	} prog;
 };
 
 typedef struct ast_t ast_t;
@@ -129,8 +136,28 @@ ast_t *ast_identifier(token_t token);
  * Parameter:
  * 	expr		the expression ast
  * 	semicolon	the semicolon token
+ *
+ * Returns:
+ * 	ast memory
  */
 ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon);
+
+/**
+ * Create a prog ast
+ *
+ * Returns:
+ * 	ast memory
+ */
+ast_t *ast_prog();
+
+/**
+ * Append stmt to the prog ast
+ *
+ * Parameters:
+ * 	prog	The prog ast where stmt is appended
+ * 	stmt	Statement that is appended
+ */
+void ast_prog_append(ast_t *prog, ast_t *stmt);
 
 /**
  * Print the given ast

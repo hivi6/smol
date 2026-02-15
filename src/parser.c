@@ -28,6 +28,7 @@ void parser_error_print();
 void parser_error_clear();
 void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message);
 
+ast_t *parser_rule_prog();
 ast_t *parser_rule_expr_stmt();
 ast_t *parser_rule_expr();
 ast_t *parser_rule_assign();
@@ -53,7 +54,7 @@ ast_t *parser_rule_primary();
 ast_t *parse(token_t *tokens) {
 	parser_init(tokens);
 
-	ast_t *res = parser_rule_expr_stmt();
+	ast_t *res = parser_rule_prog();
 	if (parser_error_check()) {
 		parser_error_print();
 		parser_error_clear();
@@ -116,6 +117,21 @@ void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t 
 	g_error_start = start;
 	g_error_end = end;
 	g_error_message = message;
+}
+
+ast_t *parser_rule_prog() {
+	ast_t *prog = ast_prog();
+
+	while (parser_current().type != TT_EOF) {
+		ast_t *stmt = parser_rule_expr_stmt();
+		if (parser_error_check()) {
+			ast_free(prog);
+			return NULL;
+		}
+		ast_prog_append(prog, stmt);
+	}
+
+	return prog;
 }
 
 ast_t *parser_rule_expr_stmt() {

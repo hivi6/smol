@@ -14,6 +14,7 @@ enum {
 	AST_IDENTIFIER,
 	AST_PROG,
 	AST_LABEL_STMT,
+	AST_VAR_STMT,
 	AST_EXPR_STMT,
 };
 
@@ -58,6 +59,13 @@ struct ast_t {
 		token_t label;
 		token_t colon;
 	} label_stmt;
+
+	struct {
+		token_t var_keyword;
+		token_t name;
+		struct ast_t *expr;
+		token_t semicolon;
+	} var_stmt;
 
 	struct {
 		struct ast_t **stmts;
@@ -159,6 +167,17 @@ ast_t *ast_expr_stmt(ast_t *expr, token_t semicolon);
  * 	ast memory
  */
 ast_t *ast_label_stmt(token_t label, token_t colon);
+
+/**
+ * Create a var stmt ast
+ *
+ * Parameter:
+ * 	var_keyword	var keyword
+ * 	name		name of the variable
+ * 	expr		initialize expr (NULL if no expression)
+ * 	semicolon	semicolon at the end of the statement
+ */
+ast_t *ast_var_stmt(token_t var_keyword, token_t name, ast_t *expr, token_t semicolon);
 
 /**
  * Create a prog ast

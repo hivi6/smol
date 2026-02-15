@@ -32,6 +32,7 @@ void parser_error_set(const char *filepath, const char *src, pos_t start, pos_t 
 
 ast_t *parser_rule_prog();
 ast_t *parser_rule_label_stmt();
+ast_t *parser_rule_var_stmt();
 ast_t *parser_rule_expr_stmt();
 ast_t *parser_rule_expr();
 ast_t *parser_rule_assign();
@@ -135,6 +136,8 @@ ast_t *parser_rule_prog() {
 
 		if (parser_current_token().type == TT_IDENTIFIER && parser_next_token().type == TT_COLON)
 			stmt = parser_rule_label_stmt();
+		else if (parser_current_token().type == TT_VAR_KEYWORD)
+			stmt = parser_rule_var_stmt();
 		else
 			stmt = parser_rule_expr_stmt();
 
@@ -157,6 +160,39 @@ ast_t *parser_rule_label_stmt() {
 	parser_next();
 
 	return ast_label_stmt(label, colon);
+}
+
+ast_t *parser_rule_var_stmt() {
+	token_t var_keyword = parser_current_token();
+	parser_next();
+
+	token_t name = parser_current_token();
+	if (name.type != TT_IDENTIFIER) {
+		parser_error_set(var_keyword.filepath, var_keyword.src, var_keyword.start, name.end,
+			"Expected an identifier after 'var' keyword");
+		return NULL;
+	}
+	parser_next();
+
+	ast_t *expr = NULL;
+	if (parser_current_token().type == TT_EQUAL) {
+		parser_next(); // pass next '='
+		
+		expr = parser_rule_expr();
+		if (parser_error_check()) {
+			return NULL;
+		}
+	}
+
+	token_t semicolon = parser_current_token();
+	if (semicolon.type != TT_SEMICOLON) {
+		ast_free(expr);
+		parser_error_set(var_keyword.filepath, var_keyword.src, var_keyword.start, 
+			semicolon.end, "Expected ';' at the end of 'var' statement");
+	}
+	parser_next();
+
+	return ast_var_stmt(var_keyword, name, expr, semicolon);
 }
 
 ast_t *parser_rule_expr_stmt() {

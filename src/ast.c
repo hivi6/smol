@@ -48,6 +48,11 @@ void ast_free(ast_t *ast) {
 		break;
 	case AST_GOTO_STMT:
 		break;
+	case AST_IF_STMT:
+		ast_free(ast->if_stmt.if_cond);
+		ast_free(ast->if_stmt.if_block);
+		ast_free(ast->if_stmt.else_block);
+		break;
 	case AST_PROG: {
 		for (int i = 0; i < ast->prog.len; i++) {
 			ast_free(ast->prog.stmts[i]);
@@ -124,6 +129,16 @@ ast_t *ast_goto_stmt(token_t goto_keyword, token_t label, token_t semicolon) {
 	res->goto_stmt.goto_keyword = goto_keyword;
 	res->goto_stmt.label = label;
 	res->goto_stmt.semicolon = semicolon;
+	return res;
+}
+
+ast_t *ast_if_stmt(token_t if_keyword, ast_t *if_cond, ast_t *if_block, ast_t *else_block) {
+	pos_t end = (else_block ? else_block->end : if_block->end);
+	ast_t *res = ast_malloc(AST_IF_STMT, if_keyword.start, end, if_keyword.filepath, if_keyword.src);
+	res->if_stmt.if_keyword = if_keyword;
+	res->if_stmt.if_cond = if_cond;
+	res->if_stmt.if_block = if_block;
+	res->if_stmt.else_block = else_block;
 	return res;
 }
 
@@ -273,6 +288,20 @@ void ast_print_helper(ast_t *ast, char *last, int depth) {
 		printf(")\n");
 
 		last[depth+1] = 0;
+		break;
+	
+	case AST_IF_STMT:
+		printf("+-- AST_IF_STMT\n");
+
+		ast_print_helper(ast->if_stmt.if_cond, last, depth+1);
+
+		last[depth+1] = !!(ast->if_stmt.else_block);
+		ast_print_helper(ast->if_stmt.if_block, last, depth+1);
+
+		last[depth+1] = 0;
+		if (ast->if_stmt.else_block) {
+			ast_print_helper(ast->if_stmt.else_block, last, depth+1);
+		}
 		break;
 
 	case AST_EXPR_STMT:

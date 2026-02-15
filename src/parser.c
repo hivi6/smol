@@ -36,6 +36,7 @@ ast_t *parser_rule_label_stmt();
 ast_t *parser_rule_var_stmt();
 ast_t *parser_rule_print_stmt();
 ast_t *parser_rule_goto_stmt();
+ast_t *parser_rule_if_stmt();
 ast_t *parser_rule_expr_stmt();
 ast_t *parser_rule_expr();
 ast_t *parser_rule_assign();
@@ -158,6 +159,8 @@ ast_t *parser_rule_stmt() {
 		stmt = parser_rule_print_stmt();
 	else if (parser_current_token().type == TT_GOTO_KEYWORD)
 		stmt = parser_rule_goto_stmt();
+	else if (parser_current_token().type == TT_IF_KEYWORD)
+		stmt = parser_rule_if_stmt();
 	else
 		stmt = parser_rule_expr_stmt();
 
@@ -254,6 +257,53 @@ ast_t *parser_rule_goto_stmt() {
 	parser_next();
 
 	return ast_goto_stmt(goto_keyword, label, semicolon);
+}
+
+ast_t *parser_rule_if_stmt() {
+	token_t if_keyword = parser_current_token();
+	parser_next();
+
+	token_t lparen = parser_current_token();
+	if (lparen.type != TT_LPAREN) {
+		parser_error_set(lparen.filepath, lparen.src, if_keyword.start, lparen.end,
+			"expected '(' after 'if' keyword");
+		return NULL;
+	}
+	parser_next();
+
+	ast_t *if_cond = parser_rule_expr();
+	if (parser_error_check()) {
+		return NULL;
+	}
+
+	token_t rparen = parser_current_token();
+	if (rparen.type != TT_RPAREN) {
+		ast_free(if_cond);
+		parser_error_set(rparen.filepath, lparen.src, if_keyword.start, rparen.end,
+			"expected ')' after if condition");
+		return NULL;
+	}
+	parser_next();
+
+	ast_t *if_block = parser_rule_stmt();
+	if (parser_error_check()) {
+		ast_free(if_cond);
+		return NULL;
+	}
+
+	ast_t *else_block = NULL;
+	token_t else_keyword = parser_current_token();
+	if (else_keyword.type == TT_ELSE_KEYWORD) {
+		parser_next();
+
+		else_block = parser_rule_stmt();
+		if (parser_error_check()) {
+			ast_free(if_cond);
+			return NULL;
+		}
+	}
+
+	return ast_if_stmt(if_keyword, if_cond, if_block, else_block);
 }
 
 ast_t *parser_rule_expr_stmt() {

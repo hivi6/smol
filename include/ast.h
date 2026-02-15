@@ -17,6 +17,7 @@ enum {
 	AST_VAR_STMT,
 	AST_PRINT_STMT,
 	AST_GOTO_STMT,
+	AST_IF_STMT,
 	AST_EXPR_STMT,
 };
 
@@ -80,6 +81,13 @@ struct ast_t {
 		token_t label;
 		token_t semicolon;
 	} goto_stmt;
+
+	struct {
+		token_t if_keyword;
+		struct ast_t *if_cond;
+		struct ast_t *if_block;
+		struct ast_t *else_block;
+	} if_stmt;
 
 	struct {
 		struct ast_t **stmts;
@@ -221,6 +229,20 @@ ast_t *ast_print_stmt(token_t print_keyword, ast_t *expr, token_t semicolon);
  * 	ast memory
  */
 ast_t *ast_goto_stmt(token_t goto_keyword, token_t label, token_t semicolon);
+
+/**
+ * Create a if stmt ast
+ *
+ * Parameters:
+ * 	if_keyword	if keyword
+ *	if_cond		condition expression
+ *	if_block	if block when if statement is true
+ *	else_block	else block when if statement is false (null if no else block)
+ *
+ * Returns:
+ * 	ast memory
+ */
+ast_t *ast_if_stmt(token_t if_keyword, ast_t *if_cond, ast_t *if_block, ast_t *else_block);
 
 /**
  * Create a prog ast

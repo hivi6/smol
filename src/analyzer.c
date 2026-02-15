@@ -31,9 +31,13 @@ void analyzer_rule_expr(ast_t *expr);
 void analyzer_rule_literal(ast_t *expr);
 void analyzer_rule_identifier(ast_t *expr);
 void analyzer_rule_unary(ast_t *expr);
+void analyzer_rule_binary(ast_t *expr);
+void analyzer_rule_ternary(ast_t *expr);
 
+int bigger_type_id(int ltype_id, int rtype_id);
 int is_numerical_type(int type_id);
 int is_lhs(ast_t *expr);
+int is_compatible_type(int ltype_id, int rtype_id);
 
 // ========================================
 // analyzer.h - definition
@@ -189,6 +193,12 @@ void analyzer_rule_expr(ast_t *expr) {
 	case AST_UNARY:
 		analyzer_rule_unary(expr);
 		break;
+	case AST_BINARY:
+		analyzer_rule_binary(expr);
+		break;
+	case AST_TERNARY:
+		analyzer_rule_ternary(expr);
+		break;
 	default:
 		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
 			"unexpected expression");
@@ -289,11 +299,114 @@ void analyzer_rule_unary(ast_t *expr) {
 	}
 }
 
+void analyzer_rule_binary(ast_t *expr) {
+	if (expr->type != AST_BINARY) {
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"expected AST_BINARY ast");
+		return;
+	}
+
+	switch (expr->binary.op.type) {
+	case TT_STAR:
+	case TT_FSLASH:
+	case TT_MOD:
+	case TT_PLUS:
+	case TT_MINUS:
+	case TT_LSHIFT:
+	case TT_RSHIFT:
+	case TT_LESSER:
+	case TT_LESSER_EQUAL:
+	case TT_GREATER:
+	case TT_GREATER_EQUAL:
+	case TT_EQUAL_EQUAL:
+	case TT_BANG_EQUAL:
+	case TT_AMPERSAND:
+	case TT_CARET:
+	case TT_PIPE:
+	case TT_LOGICAL_AND:
+	case TT_LOGICAL_OR:
+	case TT_EQUAL:
+		if (expr->binary.op.type == TT_EQUAL && !is_lhs(expr->binary.left)) {
+			analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+				"expected lhs");
+			return;
+		}
+
+		analyzer_rule_expr(expr->binary.left);
+		if (analyzer_error_check()) {
+			return;
+		}
+
+		analyzer_rule_expr(expr->binary.right);
+		if (analyzer_error_check()) {
+			return;
+		}
+
+		if (!is_compatible_type(expr->binary.left->type_id, expr->binary.right->type_id)) {
+			analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+				"left side of operation is uncompatible with right side");
+			return;
+		}
+
+		expr->type_id = bigger_type_id(expr->binary.left->type_id, expr->binary.right->type_id);
+		break;
+
+	default:
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"unsupported binary operation");
+	}
+}
+
+void analyzer_rule_ternary(ast_t *expr) {
+	if (expr->type != AST_TERNARY) {
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"expected AST_BINARY ast");
+		return;
+	}
+
+	analyzer_rule_expr(expr->ternary.left);
+	if (analyzer_error_check()) {
+		return;
+	}
+
+	if (!is_numerical_type(expr->ternary.left->type_id)) {
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"expected numeric type in ternary condition");
+		return;
+	}
+
+	analyzer_rule_expr(expr->ternary.mid);
+	if (analyzer_error_check()) {
+		return;
+	}
+
+	analyzer_rule_expr(expr->ternary.right);
+	if (analyzer_error_check()) {
+		return;
+	}
+
+	if (!is_compatible_type(expr->ternary.mid->type_id, expr->ternary.right->type_id)) {
+		analyzer_error_set(expr->filepath, expr->src, expr->start, expr->end,
+			"uncompatible mid and right block of ternary operator");
+		return;
+	}
+
+	expr->type_id = bigger_type_id(expr->ternary.mid->type_id, expr->ternary.right->type_id);
+}
+
 int is_numerical_type(int type_id) {
 	return st_check_type("int").id == type_id;
 }
 
 int is_lhs(ast_t *expr) {
 	return expr->type == AST_IDENTIFIER;
+}
+
+int bigger_type_id(int ltype_id, int rtype_id) {
+	return ltype_id;
+}
+
+int is_compatible_type(int ltype_id, int rtype_id) {
+	return ltype_id == rtype_id;
 }
 

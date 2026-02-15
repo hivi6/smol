@@ -383,7 +383,6 @@ ast_t *parser_rule_ternary() {
 			return NULL;
 		}
 
-		printf("Here\n");
 		left = ast_ternary(left, mid, right);
 	}
 

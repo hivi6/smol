@@ -7,7 +7,7 @@
 <if_stmt>	:= IF_KEYWORD LPAREN <expr> RPAREN <stmt> (ELSE_KEYWORD <stmt>)?
 <goto_stmt>	:= GOTO_KEYWORD IDENTIFIER SEMICOLON
 <print_stmt>	:= PRINT_KEYWORD <expr> SEMICOLON
-<expr_stmt>     := <expr> COLON
+<expr_stmt>     := <expr> SEMICOLON
 <expr>		:= <assign>
 <assign>	:= <ternary> (EQUAL <assign>)?
 <ternary>	:= <logical_or> (QUESTION <ternary> COLON <ternary>)?

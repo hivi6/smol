@@ -4,22 +4,25 @@
 #include "ast.h"
 
 enum {
-	OP_ADD = 0,	// Arguments are variable id; Result is a variable id
-	OP_SUB,		// Arguments are variable id; Result is a variable id
-	OP_MUL,		// Arguments are variable id; Result is a variable id
-	OP_DIV,		// Arguments are variable id; Result is a variable id
-	OP_MOD,		// Arguments are variable id; Result is a variable id
-	OP_LSHIFT,	// Arguments are variable id; Result is a variable id
-	OP_RSHIFT,	// Arguments are variable id; Result is a variable id
-	OP_LOGICAL_NOT,	// 1st argument is variable id; Result is a variable id
-	OP_BITWISE_NOT,	// 1st argument is variable id; Result is a variable id
+	OP_ADD = 0,		// Arguments are variable id; Result is a variable id
+	OP_SUB,			// Arguments are variable id; Result is a variable id
+	OP_MUL,			// Arguments are variable id; Result is a variable id
+	OP_DIV,			// Arguments are variable id; Result is a variable id
+	OP_MOD,			// Arguments are variable id; Result is a variable id
+	OP_LSHIFT,		// Arguments are variable id; Result is a variable id
+	OP_RSHIFT,		// Arguments are variable id; Result is a variable id
+	OP_EQUAL_EQUAL,		// Arguments are variable id; Result is a variable id
+	OP_NOT_EQUAL,		// Arguments are variable id; Result is a variable id
+	OP_LESSER,		// Arguments are variable id; Result is a variable id
+	OP_LESSER_EQUAL,	// Arguments are variable id; Result is a variable id
+	OP_GREATER,		// Arguments are variable id; Result is a variable id
+	OP_GREATER_EQUAL,	// Arguments are variable id; Result is a variable id
+	OP_LOGICAL_NOT,		// 1st argument is variable id; Result is a variable id
+	OP_BITWISE_NOT,		// 1st argument is variable id; Result is a variable id
 
 
 	OP_LABEL,	// No arguments; Result is a label id
 	OP_JMP,		// No arguments; Result is a label id
-	OP_JMP_EQ,	// Arguments are variable ids; Result is a label id
-	OP_JMP_NE,	// Arguments are variable ids; Result is a label id
-	OP_JMP_LT,	// Arguments are variable ids; Result is a label id
 
 	OP_COPY,	// 1st argument is variable id; Result is a variable id
 

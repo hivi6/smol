@@ -76,6 +76,24 @@ void print_ir(ir_t *ir_list) {
 		case OP_RSHIFT:
 			print_ir_op_binary(*ir_ptr, "OP_RSHIFT");
 			break;
+		case OP_EQUAL_EQUAL:
+			print_ir_op_binary(*ir_ptr, "OP_EQUAL_EQUAL");
+			break;
+		case OP_NOT_EQUAL:
+			print_ir_op_binary(*ir_ptr, "OP_NOT_EQUAL");
+			break;
+		case OP_LESSER:
+			print_ir_op_binary(*ir_ptr, "OP_LESSER");
+			break;
+		case OP_LESSER_EQUAL:
+			print_ir_op_binary(*ir_ptr, "OP_LESSER_EQUAL");
+			break;
+		case OP_GREATER:
+			print_ir_op_binary(*ir_ptr, "OP_GREATER");
+			break;
+		case OP_GREATER_EQUAL:
+			print_ir_op_binary(*ir_ptr, "OP_GREATER_EQUAL");
+			break;
 		case OP_LOGICAL_NOT:
 			print_ir_op_unary(*ir_ptr, "OP_LOGICAL_NOT");
 			break;
@@ -312,6 +330,36 @@ int ir_rule_binary(ast_t *ast) {
 	case TT_RSHIFT: {
 		int res_id = ir_generate_temp();
 		ir_emit(OP_RSHIFT, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_EQUAL_EQUAL: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_EQUAL_EQUAL, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_BANG_EQUAL: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_NOT_EQUAL, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_LESSER: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_LESSER, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_LESSER_EQUAL: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_LESSER_EQUAL, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_GREATER: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_GREATER, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_GREATER_EQUAL: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_GREATER_EQUAL, res_id, left_id, right_id);
 		return res_id;
 	}
 	default:

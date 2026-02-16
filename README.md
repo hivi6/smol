@@ -35,3 +35,7 @@ For more info regarding the usage run the following
 ```bash
 ./build/smol --help
 ```
+
+## Resources
+
+- [Smol Language Grammar](./grammar)

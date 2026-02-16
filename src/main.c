@@ -7,6 +7,7 @@
 #include "analyzer.h"
 #include "ir.h"
 #include "st.h"
+#include "vm.h"
 
 // ========================================
 // helper declaration
@@ -23,7 +24,7 @@ int main(int argc, const char **argv) {
 	int index = 1;
 	int usage_flag = 0;
 	const char *output_file = "a.out";
-	int lexer_flag = 0, parser_flag = 0;
+	int lexer_flag = 0, parser_flag = 0, ir_flag = 0;
 	while (index < argc) {
 		if (strcmp("--help", argv[index]) == 0 ||
 			strcmp("-h", argv[index]) == 0) {
@@ -43,6 +44,9 @@ int main(int argc, const char **argv) {
 		}
 		else if (strcmp("--only-parser", argv[index]) == 0) {
 			parser_flag = 1;
+		}
+		else if (strcmp("--only-ir", argv[index]) == 0) {
+			ir_flag = 1;
 		}
 		else break;
 		index++;
@@ -97,7 +101,12 @@ int main(int argc, const char **argv) {
 	if (ir_list == NULL) {
 		exit(1);
 	}
-	print_ir(ir_list);
+	if (ir_flag) {
+		print_ir(ir_list);
+		return 0;
+	}
+
+	vm_run(ir_list);
 
 	free(ir_list);
 
@@ -123,6 +132,7 @@ void usage(FILE *fd) {
 	fprintf(fd, "        --output <filename>        Change the output filepath\n");
 	fprintf(fd, "        --only-lexer               Print only the output of lexer\n");
 	fprintf(fd, "        --only-parser              Print only the output of parser\n");
+	fprintf(fd, "        --only-ir                  Print only the output of ir generator\n");
 	fprintf(fd, "\n");
 	fprintf(fd, "MORE INFO:\n");
 	fprintf(fd, "        - To read from stdin run as follows './smol -'\n");

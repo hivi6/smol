@@ -30,6 +30,8 @@ void ir_rule_label_stmt(ast_t *ast);
 void ir_rule_var_stmt(ast_t *ast);
 int ir_rule_expr(ast_t *ast);
 int ir_rule_literal(ast_t *ast);
+int ir_rule_identifier(ast_t *ast);
+int ir_rule_unary(ast_t *ast);
 
 // ========================================
 // ir.h - definition
@@ -168,6 +170,10 @@ int ir_rule_expr(ast_t *ast) {
 	switch (ast->type) {
 	case AST_LITERAL:
 		return ir_rule_literal(ast);
+	case AST_IDENTIFIER:
+		return ir_rule_identifier(ast);
+	case AST_UNARY:
+		return ir_rule_unary(ast);
 	default:
 		fprintf(stderr, "yooo, how you here?\n");
 		exit(1);
@@ -194,3 +200,21 @@ int ir_rule_literal(ast_t *ast) {
 
 	return id;
 }
+
+int ir_rule_identifier(ast_t *ast) {
+	char *lexical = token_lexical(ast->identifier.token);
+	int id = st_check_var(lexical).id;
+	free(lexical);
+	return id;
+}
+
+int ir_rule_unary(ast_t *ast) {
+	switch (ast->unary.op.type) {
+	case TT_PLUS:
+		return ir_rule_expr(ast->unary.right);
+	default:
+		fprintf(stderr, ">_<; don't sniff around!\n");
+		exit(1);
+	}
+}
+

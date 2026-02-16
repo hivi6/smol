@@ -103,6 +103,12 @@ void print_ir(ir_t *ir_list) {
 		case OP_BITWISE_XOR:
 			print_ir_op_binary(*ir_ptr, "OP_BITWISE_XOR");
 			break;
+		case OP_LOGICAL_AND:
+			print_ir_op_binary(*ir_ptr, "OP_LOGICAL_AND");
+			break;
+		case OP_LOGICAL_OR:
+			print_ir_op_binary(*ir_ptr, "OP_LOGICAL_OR");
+			break;
 		case OP_LOGICAL_NOT:
 			print_ir_op_unary(*ir_ptr, "OP_LOGICAL_NOT");
 			break;
@@ -384,6 +390,16 @@ int ir_rule_binary(ast_t *ast) {
 	case TT_PIPE: {
 		int res_id = ir_generate_temp();
 		ir_emit(OP_BITWISE_OR, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_LOGICAL_AND: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_LOGICAL_AND, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_LOGICAL_OR: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_LOGICAL_OR, res_id, left_id, right_id);
 		return res_id;
 	}
 	default:

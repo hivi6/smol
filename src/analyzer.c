@@ -48,16 +48,12 @@ int is_compatible_type(int ltype_id, int rtype_id);
 // ========================================
 
 int analyze(ast_t *ast) {
-	analyzer_init();
-
 	analyzer_rule_prog(ast);
 	if (analyzer_error_check()) {
 		analyzer_error_print();
 		analyzer_error_clear();
 		return 1;
 	}
-
-	analyzer_free();
 
 	return 0;
 }
@@ -68,13 +64,9 @@ int analyze(ast_t *ast) {
 
 void analyzer_init() {
 	g_has_error = 0;
-
-	st_init();
-	st_create_type("int");
 }
 
 void analyzer_free() {
-	st_free();
 }
 
 void analyzer_error_set(const char *filepath, const char *src, pos_t start, pos_t end, const char *message) {

@@ -73,6 +73,16 @@ name_t st_check_label(const char *name) {
 	return (name_t) {.id=-1};
 }
 
+name_t st_check_label_by_id(int label_id) {
+	for (int i = 0; i < g_labels_len; i++) {
+		name_t n = g_labels[i];
+		if (n.id == label_id) {
+			return n;
+		}
+	}
+	return (name_t) {.id=-1};
+}
+
 name_t st_create_label(const char *name) {
 	g_labels_len++;
 	g_labels = realloc(g_labels, g_labels_len * sizeof(name_t));
@@ -90,6 +100,16 @@ name_t st_check_var(const char *name) {
 	for (int i = 0; i < g_vars_len; i++) {
 		name_t n = g_vars[i];
 		if (strcmp(name, n.name) == 0) {
+			return n;
+		}
+	}
+	return (name_t) {.id=-1};
+}
+
+name_t st_check_var_by_id(int var_id) {
+	for (int i = 0; i < g_vars_len; i++) {
+		name_t n = g_vars[i];
+		if (n.id == var_id) {
 			return n;
 		}
 	}

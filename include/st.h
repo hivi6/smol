@@ -62,6 +62,17 @@ name_t st_create_label(const char *name);
 name_t st_check_label(const char *name);
 
 /**
+ * Check if label exists by id of the label
+ *
+ * Parameters:
+ * 	id	Id of the label
+ *
+ * Returns:
+ * 	name_t type (id = -1 if doesn't exists)
+ */
+name_t st_check_label_by_id(int label_id);
+
+/**
  * Create a new variable name
  *
  * Parameters:
@@ -83,6 +94,17 @@ name_t st_create_var(const char *name, int type_id);
  * 	name_t type (id = -1 if doesn't exists)
  */
 name_t st_check_var(const char *name);
+
+/**
+ * Check if var exists by id of the var
+ *
+ * Parameters:
+ * 	id	Id of the var
+ *
+ * Returns:
+ * 	name_t type (id = -1 if doesn't exists)
+ */
+name_t st_check_var_by_id(int var_id);
 
 #endif // ST_H
 

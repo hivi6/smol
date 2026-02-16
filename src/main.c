@@ -5,6 +5,8 @@
 #include "lexer.h"
 #include "parser.h"
 #include "analyzer.h"
+#include "ir.h"
+#include "st.h"
 
 // ========================================
 // helper declaration
@@ -82,12 +84,27 @@ int main(int argc, const char **argv) {
 		return 0;
 	}
 
+	// initialize the symbol table
+	st_init();
+	st_create_type("int");
+
 	int error = analyze(ast);
 	if (error) {
 		exit(1);
 	}
 
+	ir_t *ir_list = generate_ir(ast);
+	if (ir_list == NULL) {
+		exit(1);
+	}
+	print_ir(ir_list);
+
+	free(ir_list);
+
+	st_free();
+
 	ast_free(ast);
+
 	free(src);
 	free(tokens);
 

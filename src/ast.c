@@ -200,6 +200,8 @@ ast_t *ast_malloc(int type, pos_t start, pos_t end, const char *filepath, const 
 	res->filepath = filepath;
 	res->src = src;
 	res->type_id = -1;
+	res->label_id = -1;
+	res->var_id = -1;
 	return res;
 }
 

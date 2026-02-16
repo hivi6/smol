@@ -155,7 +155,8 @@ void analyzer_rule_label_stmt(ast_t *stmt) {
 			"label already declared");
 		goto cleanup;
 	}
-	st_create_label(lexical);
+	name_t name = st_create_label(lexical);
+	stmt->label_id = name.id;
 
 cleanup:
 	free(lexical);
@@ -192,7 +193,9 @@ void analyzer_rule_var_stmt(ast_t *stmt) {
 		}
 	}
 
-	st_create_var(lexical, type_id);
+	name_t name = st_create_var(lexical, type_id);
+	stmt->type_id = name.type_id;
+	stmt->var_id = name.id;
 
 cleanup:
 	free(lexical);

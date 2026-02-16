@@ -27,7 +27,10 @@ struct ast_t {
 	pos_t end;
 	const char *filepath;
 	const char *src;
-	int type_id;
+
+	int type_id;	// for type related information
+	int label_id;	// for label related information
+	int var_id;	// for variable related information
 
 	struct {
 		token_t token;

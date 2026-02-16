@@ -17,6 +17,9 @@ enum {
 	OP_LESSER_EQUAL,	// Arguments are variable id; Result is a variable id
 	OP_GREATER,		// Arguments are variable id; Result is a variable id
 	OP_GREATER_EQUAL,	// Arguments are variable id; Result is a variable id
+	OP_BITWISE_AND,		// Arguments are variable id; Result is a variable id
+	OP_BITWISE_OR,		// Arguments are variable id; Result is a variable id
+	OP_BITWISE_XOR,		// Arguments are variable id; Result is a variable id
 	OP_LOGICAL_NOT,		// 1st argument is variable id; Result is a variable id
 	OP_BITWISE_NOT,		// 1st argument is variable id; Result is a variable id
 

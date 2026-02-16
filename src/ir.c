@@ -256,6 +256,9 @@ void ir_rule_stmt(ast_t *ast) {
 	case AST_PRINT_STMT:
 		ir_rule_print_stmt(ast);
 		break;
+	case AST_EXPR_STMT:
+		ir_rule_expr(ast->expr_stmt.expr);
+		break;
 	default:
 		fprintf(stderr, "bruhhh, you shouldn't be here!\n");
 		exit(1);

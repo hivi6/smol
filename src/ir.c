@@ -33,6 +33,7 @@ void ir_rule_stmt(ast_t *ast);
 void ir_rule_label_stmt(ast_t *ast);
 void ir_rule_var_stmt(ast_t *ast);
 void ir_rule_if_stmt(ast_t *ast);
+void ir_rule_goto_stmt(ast_t *ast);
 int ir_rule_expr(ast_t *ast);
 int ir_rule_literal(ast_t *ast);
 int ir_rule_identifier(ast_t *ast);
@@ -239,6 +240,9 @@ void ir_rule_stmt(ast_t *ast) {
 	case AST_IF_STMT:
 		ir_rule_if_stmt(ast);
 		break;
+	case AST_GOTO_STMT:
+		ir_rule_goto_stmt(ast);
+		break;
 	default:
 		fprintf(stderr, "bruhhh, you shouldn't be here!\n");
 		exit(1);
@@ -284,6 +288,13 @@ void ir_rule_if_stmt(ast_t *ast) {
 	ir_rule_stmt(ast->if_stmt.if_block);
 
 	ir_emit(OP_LABEL, end_label, 0, 0);
+}
+
+void ir_rule_goto_stmt(ast_t *ast) {
+	char *lexical = token_lexical(ast->goto_stmt.label);
+	name_t n = st_check_label(lexical);
+	ir_emit(OP_JMP, n.id, 0, 0);
+	free(lexical);
 }
 
 int ir_rule_expr(ast_t *ast) {

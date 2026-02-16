@@ -28,6 +28,8 @@ enum {
 
 	OP_LABEL,	// No arguments; Result is a label id
 	OP_JMP,		// No arguments; Result is a label id
+	OP_JMP_TRUE,	// 1st argument is variable id; Result is a label id
+	OP_JMP_FALSE,	// 1st argument is variable id; Result is a label id
 
 	OP_COPY,	// 1st argument is variable id; Result is a variable id
 

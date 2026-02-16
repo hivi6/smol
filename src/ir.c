@@ -11,7 +11,7 @@
 
 static ir_t *g_ir_list;
 static int g_ir_list_len;
-static int g_temp_len;
+static int g_temp_len, g_label_len;
 
 void ir_init();
 ir_t *ir_list();
@@ -25,6 +25,8 @@ void print_ir_op_binary(ir_t ir, const char *op_str);
 void print_ir_op_unary(ir_t ir, const char *op_str);
 void print_ir_op_label(ir_t ir);
 void print_ir_op_copy(ir_t ir);
+void print_ir_op_jmp_cond(ir_t ir, const char *op_str);
+void print_ir_op_jmp(ir_t ir);
 
 void ir_rule_prog(ast_t *ast);
 void ir_rule_stmt(ast_t *ast);
@@ -35,7 +37,9 @@ int ir_rule_literal(ast_t *ast);
 int ir_rule_identifier(ast_t *ast);
 int ir_rule_unary(ast_t *ast);
 int ir_rule_binary(ast_t *ast);
+int ir_rule_ternary(ast_t *ast);
 
+int ir_generate_label();
 int ir_generate_temp();
 int ir_generate_literal(const char *literal);
 
@@ -121,6 +125,15 @@ void print_ir(ir_t *ir_list) {
 		case OP_COPY:
 			print_ir_op_copy(*ir_ptr);
 			break;
+		case OP_JMP_TRUE:
+			print_ir_op_jmp_cond(*ir_ptr, "OP_JMP_TRUE");
+			break;
+		case OP_JMP_FALSE:
+			print_ir_op_jmp_cond(*ir_ptr, "OP_JMP_FALSE");
+			break;
+		case OP_JMP:
+			print_ir_op_jmp(*ir_ptr);
+			break;
 		case OP_END:
 			printf("OP_END\n");
 			break;
@@ -140,7 +153,7 @@ void print_ir(ir_t *ir_list) {
 void ir_init() {
 	g_ir_list = NULL;
 	g_ir_list_len = 0;
-	g_temp_len = 0;
+	g_temp_len = g_label_len = 0;
 }
 
 ir_t *ir_list() {
@@ -195,6 +208,17 @@ void print_ir_op_copy(ir_t ir) {
 	print_ir_print2("OP_COPY", res_name.id, res_name.name, arg1_name.id, arg1_name.name);
 }
 
+void print_ir_op_jmp_cond(ir_t ir, const char *op_str) {
+	name_t res_name = st_check_label_by_id(ir.res_id);
+	name_t arg1_name = st_check_var_by_id(ir.arg1_id);
+	print_ir_print2(op_str, res_name.id, res_name.name, arg1_name.id, arg1_name.name);
+}
+
+void print_ir_op_jmp(ir_t ir) {
+	name_t res_name = st_check_label_by_id(ir.res_id);
+	print_ir_print1("OP_JMP", res_name.id, res_name.name);
+}
+
 void ir_rule_prog(ast_t *ast) {
 	for (int i = 0; i < ast->prog.len; i++) {
 		ir_rule_stmt(ast->prog.stmts[i]);
@@ -246,6 +270,8 @@ int ir_rule_expr(ast_t *ast) {
 		return ir_rule_unary(ast);
 	case AST_BINARY:
 		return ir_rule_binary(ast);
+	case AST_TERNARY:
+		return ir_rule_ternary(ast);
 	default:
 		fprintf(stderr, "yooo, how you here?\n");
 		exit(1);
@@ -412,11 +438,40 @@ int ir_rule_binary(ast_t *ast) {
 	}
 }
 
+int ir_rule_ternary(ast_t *ast) {
+	int cond_id = ir_rule_expr(ast->ternary.left);
+
+	int res_id = ir_generate_temp();
+	int true_label = ir_generate_label();
+	int false_label = ir_generate_label();
+	int end_label = ir_generate_label();
+
+	ir_emit(OP_JMP_TRUE, true_label, cond_id, 0);
+
+	// false case
+	ir_emit(OP_COPY, res_id, ir_rule_expr(ast->ternary.right), 0);
+	ir_emit(OP_JMP, end_label, 0, 0);
+
+	// true case
+	ir_emit(OP_LABEL, true_label, 0, 0);
+	ir_emit(OP_COPY, res_id, ir_rule_expr(ast->ternary.mid), 0);
+
+	// end case
+	ir_emit(OP_LABEL, end_label, 0, 0);
+
+	return res_id;
+}
+
+int ir_generate_label() {
+	char buffer[1024];
+	sprintf(buffer, ".LABEL_%d", ++g_label_len);
+	return st_create_label(buffer).id;
+}
+
 int ir_generate_temp() {
 	char buffer[1024];
 	sprintf(buffer, ".TEMP_%d", ++g_temp_len);
-	int id = st_create_var(buffer, st_check_type("int").id).id;
-	return id;
+	return st_create_var(buffer, st_check_type("int").id).id;
 }
 
 int ir_generate_literal(const char *lexical) {

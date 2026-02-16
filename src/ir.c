@@ -27,6 +27,7 @@ void print_ir_op_label(ir_t ir);
 void print_ir_op_copy(ir_t ir);
 void print_ir_op_jmp_cond(ir_t ir, const char *op_str);
 void print_ir_op_jmp(ir_t ir);
+void print_ir_op_print(ir_t ir);
 
 void ir_rule_prog(ast_t *ast);
 void ir_rule_stmt(ast_t *ast);
@@ -34,6 +35,7 @@ void ir_rule_label_stmt(ast_t *ast);
 void ir_rule_var_stmt(ast_t *ast);
 void ir_rule_if_stmt(ast_t *ast);
 void ir_rule_goto_stmt(ast_t *ast);
+void ir_rule_print_stmt(ast_t *ast);
 int ir_rule_expr(ast_t *ast);
 int ir_rule_literal(ast_t *ast);
 int ir_rule_identifier(ast_t *ast);
@@ -136,6 +138,9 @@ void print_ir(ir_t *ir_list) {
 		case OP_JMP:
 			print_ir_op_jmp(*ir_ptr);
 			break;
+		case OP_PRINT:
+			print_ir_op_print(*ir_ptr);
+			break;
 		case OP_END:
 			printf("OP_END\n");
 			break;
@@ -221,6 +226,11 @@ void print_ir_op_jmp(ir_t ir) {
 	print_ir_print1("OP_JMP", res_name.id, res_name.name);
 }
 
+void print_ir_op_print(ir_t ir) {
+	name_t res_name = st_check_var_by_id(ir.res_id);
+	print_ir_print1("OP_PRINT", res_name.id, res_name.name);
+}
+
 void ir_rule_prog(ast_t *ast) {
 	for (int i = 0; i < ast->prog.len; i++) {
 		ir_rule_stmt(ast->prog.stmts[i]);
@@ -242,6 +252,9 @@ void ir_rule_stmt(ast_t *ast) {
 		break;
 	case AST_GOTO_STMT:
 		ir_rule_goto_stmt(ast);
+		break;
+	case AST_PRINT_STMT:
+		ir_rule_print_stmt(ast);
 		break;
 	default:
 		fprintf(stderr, "bruhhh, you shouldn't be here!\n");
@@ -295,6 +308,11 @@ void ir_rule_goto_stmt(ast_t *ast) {
 	name_t n = st_check_label(lexical);
 	ir_emit(OP_JMP, n.id, 0, 0);
 	free(lexical);
+}
+
+void ir_rule_print_stmt(ast_t *ast) {
+	int res_id = ir_rule_expr(ast->print_stmt.expr);
+	ir_emit(OP_PRINT, res_id, 0, 0);
 }
 
 int ir_rule_expr(ast_t *ast) {

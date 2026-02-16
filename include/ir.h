@@ -33,6 +33,8 @@ enum {
 
 	OP_COPY,	// 1st argument is variable id; Result is a variable id
 
+	OP_PRINT,	// No arguments; Result is a variable id
+
 	OP_END,		// End of the instructions
 };
 

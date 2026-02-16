@@ -288,6 +288,16 @@ int ir_rule_binary(ast_t *ast) {
 		ir_emit(OP_MOD, res_id, left_id, right_id);
 		return res_id;
 	}
+	case TT_PLUS: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_ADD, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_MINUS: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_SUB, res_id, left_id, right_id);
+		return res_id;
+	}
 	default:
 		fprintf(stderr, "invalidated ~.~\n");
 		exit(1);

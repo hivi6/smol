@@ -6,6 +6,9 @@
 enum {
 	OP_ADD = 0,	// Arguments are variable id; Result is a variable id
 	OP_SUB,		// Arguments are variable id; Result is a variable id
+	OP_MUL,		// Arguments are variable id; Result is a variable id
+	OP_DIV,		// Arguments are variable id; Result is a variable id
+	OP_MOD,		// Arguments are variable id; Result is a variable id
 	OP_LOGICAL_NOT,	// 1st argument is variable id; Result is a variable id
 	OP_BITWISE_NOT,	// 1st argument is variable id; Result is a variable id
 

@@ -34,6 +34,7 @@ int ir_rule_expr(ast_t *ast);
 int ir_rule_literal(ast_t *ast);
 int ir_rule_identifier(ast_t *ast);
 int ir_rule_unary(ast_t *ast);
+int ir_rule_binary(ast_t *ast);
 
 int ir_generate_temp();
 int ir_generate_literal(const char *literal);
@@ -59,6 +60,15 @@ void print_ir(ir_t *ir_list) {
 			break;
 		case OP_SUB:
 			print_ir_op_binary(*ir_ptr, "OP_SUB");
+			break;
+		case OP_MUL:
+			print_ir_op_binary(*ir_ptr, "OP_MUL");
+			break;
+		case OP_DIV:
+			print_ir_op_binary(*ir_ptr, "OP_DIV");
+			break;
+		case OP_MOD:
+			print_ir_op_binary(*ir_ptr, "OP_MOD");
 			break;
 		case OP_LOGICAL_NOT:
 			print_ir_op_unary(*ir_ptr, "OP_LOGICAL_NOT");
@@ -195,6 +205,8 @@ int ir_rule_expr(ast_t *ast) {
 		return ir_rule_identifier(ast);
 	case AST_UNARY:
 		return ir_rule_unary(ast);
+	case AST_BINARY:
+		return ir_rule_binary(ast);
 	default:
 		fprintf(stderr, "yooo, how you here?\n");
 		exit(1);
@@ -253,6 +265,31 @@ int ir_rule_unary(ast_t *ast) {
 	}
 	default:
 		fprintf(stderr, ">_<; don't sniff around!\n");
+		exit(1);
+	}
+}
+
+int ir_rule_binary(ast_t *ast) {
+	int left_id = ir_rule_expr(ast->binary.left);
+	int right_id = ir_rule_expr(ast->binary.right);
+	switch (ast->binary.op.type) {
+	case TT_STAR: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_MUL, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_FSLASH: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_DIV, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_MOD: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_MOD, res_id, left_id, right_id);
+		return res_id;
+	}
+	default:
+		fprintf(stderr, "invalidated ~.~\n");
 		exit(1);
 	}
 }

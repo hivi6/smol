@@ -402,6 +402,10 @@ int ir_rule_binary(ast_t *ast) {
 		ir_emit(OP_LOGICAL_OR, res_id, left_id, right_id);
 		return res_id;
 	}
+	case TT_EQUAL: {
+		ir_emit(OP_COPY, left_id, right_id, 0);
+		return left_id;
+	}
 	default:
 		fprintf(stderr, "invalidated ~.~\n");
 		exit(1);

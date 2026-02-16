@@ -11,6 +11,7 @@
 
 static ir_t *g_ir_list;
 static int g_ir_list_len;
+static int g_temp_len;
 
 void ir_init();
 ir_t *ir_list();
@@ -20,7 +21,8 @@ void print_ir_print1(const char *op_str, int res_id, const char *res_name);
 void print_ir_print2(const char *op_str, int res_id, const char *res_name, int arg1_id, const char *arg1_name);
 void print_ir_print3(const char *op_str, int res_id, const char *res_name, int arg1_id, const char *arg1_name,
 	int arg2_id, const char *arg2_name);
-void print_ir_op_math(ir_t ir, const char *op_str);
+void print_ir_op_binary(ir_t ir, const char *op_str);
+void print_ir_op_unary(ir_t ir, const char *op_str);
 void print_ir_op_label(ir_t ir);
 void print_ir_op_copy(ir_t ir);
 
@@ -32,6 +34,9 @@ int ir_rule_expr(ast_t *ast);
 int ir_rule_literal(ast_t *ast);
 int ir_rule_identifier(ast_t *ast);
 int ir_rule_unary(ast_t *ast);
+
+int ir_generate_temp();
+int ir_generate_literal(const char *literal);
 
 // ========================================
 // ir.h - definition
@@ -50,7 +55,16 @@ void print_ir(ir_t *ir_list) {
 	do {
 		switch (ir_ptr->op) {
 		case OP_ADD:
-			print_ir_op_math(*ir_ptr, "OP_ADD");
+			print_ir_op_binary(*ir_ptr, "OP_ADD");
+			break;
+		case OP_SUB:
+			print_ir_op_binary(*ir_ptr, "OP_SUB");
+			break;
+		case OP_LOGICAL_NOT:
+			print_ir_op_unary(*ir_ptr, "OP_LOGICAL_NOT");
+			break;
+		case OP_BITWISE_NOT:
+			print_ir_op_unary(*ir_ptr, "OP_BITWISE_NOT");
 			break;
 		case OP_LABEL:
 			print_ir_op_label(*ir_ptr);
@@ -77,6 +91,7 @@ void print_ir(ir_t *ir_list) {
 void ir_init() {
 	g_ir_list = NULL;
 	g_ir_list_len = 0;
+	g_temp_len = 0;
 }
 
 ir_t *ir_list() {
@@ -94,24 +109,30 @@ void ir_emit(int op, int res_id, int arg1_id, int arg2_id) {
 }
 
 void print_ir_print1(const char *op_str, int res_id, const char *res_name) {
-	printf("%-10s | %-5d %-10s\n", op_str, res_id, res_name);
+	printf("%-20s | %-5d %-10s\n", op_str, res_id, res_name);
 }
 
 void print_ir_print2(const char *op_str, int res_id, const char *res_name, int arg1_id, const char *arg1_name) {
-	printf("%-10s | %-5d %-10s | %-5d %-10s\n", op_str, res_id, res_name, arg1_id, arg1_name);
+	printf("%-20s | %-5d %-10s | %-5d %-10s\n", op_str, res_id, res_name, arg1_id, arg1_name);
 }
 
 void print_ir_print3(const char *op_str, int res_id, const char *res_name, int arg1_id, const char *arg1_name,
 	int arg2_id, const char *arg2_name) {
-	printf("%-10s | %-5d %-10s | %-5d %-10s | %-5d %-10s\n", op_str, res_id, res_name, arg1_id, arg1_name,
+	printf("%-20s | %-5d %-10s | %-5d %-10s | %-5d %-10s\n", op_str, res_id, res_name, arg1_id, arg1_name,
 		arg2_id, arg2_name);
 }
 
-void print_ir_op_math(ir_t ir, const char *op_str) {
+void print_ir_op_binary(ir_t ir, const char *op_str) {
 	name_t res_name = st_check_var_by_id(ir.res_id);
 	name_t arg1_name = st_check_var_by_id(ir.arg1_id);
 	name_t arg2_name = st_check_var_by_id(ir.arg2_id);
 	print_ir_print3(op_str, res_name.id, res_name.name, arg1_name.id, arg1_name.name, arg2_name.id, arg2_name.name);
+}
+
+void print_ir_op_unary(ir_t ir, const char *op_str) {
+	name_t res_name = st_check_var_by_id(ir.res_id);
+	name_t arg1_name = st_check_var_by_id(ir.arg1_id);
+	print_ir_print2(op_str, res_name.id, res_name.name, arg1_name.id, arg1_name.name);
 }
 
 void print_ir_op_label(ir_t ir) {
@@ -182,7 +203,68 @@ int ir_rule_expr(ast_t *ast) {
 
 int ir_rule_literal(ast_t *ast) {
 	char *lexical = token_lexical(ast->literal.token);
+	int id = ir_generate_literal(lexical);
+	free(lexical);
+	return id;
+}
 
+int ir_rule_identifier(ast_t *ast) {
+	char *lexical = token_lexical(ast->identifier.token);
+	int id = st_check_var(lexical).id;
+	free(lexical);
+	return id;
+}
+
+int ir_rule_unary(ast_t *ast) {
+	int expr_id = ir_rule_expr(ast->unary.right);
+
+	switch (ast->unary.op.type) {
+	case TT_PLUS:
+		return expr_id;
+	case TT_MINUS: {
+		int res_id = ir_generate_temp();
+		int zero_literal = ir_generate_literal("0");
+		ir_emit(OP_SUB, res_id, zero_literal, expr_id);
+		return res_id;
+	}
+	case TT_PLUS_PLUS: {
+		int res_id = ir_generate_temp();
+		int one_literal = ir_generate_literal("1");
+		ir_emit(OP_ADD, res_id, expr_id, one_literal);
+		ir_emit(OP_COPY, expr_id, res_id, 0);
+		return res_id;
+	}
+	case TT_MINUS_MINUS: {
+		int res_id = ir_generate_temp();
+		int one_literal = ir_generate_literal("1");
+		ir_emit(OP_SUB, res_id, expr_id, one_literal);
+		ir_emit(OP_COPY, expr_id, res_id, 0);
+		return res_id;
+	}
+	case TT_BANG: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_LOGICAL_NOT, res_id, expr_id, 0);
+		return res_id;
+	}
+	case TT_TILDE: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_BITWISE_NOT, res_id, expr_id, 0);
+		return res_id;
+	}
+	default:
+		fprintf(stderr, ">_<; don't sniff around!\n");
+		exit(1);
+	}
+}
+
+int ir_generate_temp() {
+	char buffer[1024];
+	sprintf(buffer, ".TEMP_%d", ++g_temp_len);
+	int id = st_create_var(buffer, st_check_type("int").id).id;
+	return id;
+}
+
+int ir_generate_literal(const char *lexical) {
 	const char *format = ".LITERAL_%s";
 
 	int length = snprintf(NULL, 0, format, lexical);
@@ -196,25 +278,7 @@ int ir_rule_literal(ast_t *ast) {
 	int id = st_check_var(postfix_lexical).id;
 
 	free(postfix_lexical);
-	free(lexical);
 
 	return id;
-}
-
-int ir_rule_identifier(ast_t *ast) {
-	char *lexical = token_lexical(ast->identifier.token);
-	int id = st_check_var(lexical).id;
-	free(lexical);
-	return id;
-}
-
-int ir_rule_unary(ast_t *ast) {
-	switch (ast->unary.op.type) {
-	case TT_PLUS:
-		return ir_rule_expr(ast->unary.right);
-	default:
-		fprintf(stderr, ">_<; don't sniff around!\n");
-		exit(1);
-	}
 }
 

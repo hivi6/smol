@@ -70,6 +70,12 @@ void print_ir(ir_t *ir_list) {
 		case OP_MOD:
 			print_ir_op_binary(*ir_ptr, "OP_MOD");
 			break;
+		case OP_LSHIFT:
+			print_ir_op_binary(*ir_ptr, "OP_LSHIFT");
+			break;
+		case OP_RSHIFT:
+			print_ir_op_binary(*ir_ptr, "OP_RSHIFT");
+			break;
 		case OP_LOGICAL_NOT:
 			print_ir_op_unary(*ir_ptr, "OP_LOGICAL_NOT");
 			break;
@@ -296,6 +302,16 @@ int ir_rule_binary(ast_t *ast) {
 	case TT_MINUS: {
 		int res_id = ir_generate_temp();
 		ir_emit(OP_SUB, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_LSHIFT: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_LSHIFT, res_id, left_id, right_id);
+		return res_id;
+	}
+	case TT_RSHIFT: {
+		int res_id = ir_generate_temp();
+		ir_emit(OP_RSHIFT, res_id, left_id, right_id);
 		return res_id;
 	}
 	default:
